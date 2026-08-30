@@ -1,0 +1,14 @@
+{
+  "name": "wreck-works",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An LLM game factory: every step of making a game runnable by an LLM, a human, or a script, and done only when its gate passes.",
+  "license": "MIT",
+  "scripts": {
+    "setup": "cd web && npm install",
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build",
+    "start": "cd web && npm run start",
+    "worker": "node worker/worker.js"
+  }
+}

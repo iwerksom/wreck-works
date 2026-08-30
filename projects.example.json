@@ -1,0 +1,11 @@
+{
+  "active": "ghost-in-the-wreck",
+  "projects": [
+    {
+      "id": "ghost-in-the-wreck",
+      "name": "Ghost in the Wreck",
+      "root": "../ghost-in-the-wreck",
+      "pipeline": "pipeline.json"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+node_modules/
+web/.next/
+web/.env.local
+.env
+.env.local
+
+# Local project wiring — projects.example.json is the committed template.
+projects.json
+
+# Run state lives with each project, at <project>/.factory/ — never here.
+state/

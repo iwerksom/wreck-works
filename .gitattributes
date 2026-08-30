@@ -1,0 +1,3 @@
+# The worker spawns `bash -lc`; gates are shell commands. LF everywhere.
+* text=auto eol=lf
+*.png binary
