@@ -110,6 +110,25 @@ Or from the downloaded bootstrapper:
   --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart
 ```
 
+**The `--add` is the whole point.** Installing Build Tools 2022 without it
+succeeds, registers in `vswhere`, and gives you MSBuild and nothing else — no
+`cl.exe`, no MSVC toolset, no C++ at all. It looks installed and is not. This
+happened here on 2026-09-07: `VC\Tools\MSVC\` was simply absent. To repair an
+install already in that state, re-run the same command — it modifies in place —
+or use the Visual Studio Installer GUI: Build Tools 2022 → Modify → check
+**Desktop development with C++** → Modify.
+
+Confirm the compiler component actually exists before believing any of it:
+
+```powershell
+& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
+  -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+  -format value -property installationPath
+```
+
+Empty output means no install on the machine has the C++ compiler, whatever the
+Installer's product list claims.
+
 `--installPath` on D: keeps the ~7 GB workload off a drive at 95%. Note that a
 shared component cache of roughly 1.5 GB still goes to C: regardless; that is a
 Visual Studio design decision, not something the flags can override.
