@@ -1,55 +1,43 @@
 # Positioning: gates, not generators
 
-*Written 2026-09-03. Cites the landscape survey and Ghost in the Wreck
-measurements in `PLAN.md`. Read aloud in under four minutes.*
+*Written 2026-09-03, trimmed 2026-09-07. Cites the landscape survey and Ghost in
+the Wreck measurements in `PLAN.md`. Read aloud in under four minutes.*
 
 ## The thesis
 
 Dynamic game content is not a generation problem. It is a gating problem.
 
-A language model can invent a quest, a map, a line of dialogue, an item.
-What decides whether it ships is whether a machine can prove, before the
-player ever sees it, that the thing is playable, reachable, in-canon, and
-non-embarrassing. The generator is commodity — every studio can call an
-API. The validator is the product, and almost nobody in games is building
-one.
+A model can invent a quest, a map, a line of dialogue. What decides whether it
+ships is whether a machine can prove, before any player sees it, that the thing
+is playable, reachable, in-canon and non-embarrassing. The generator is
+commodity — every studio can call an API. The validator is the product, and
+almost nobody in games is building one.
 
-Two independent academic studies of LLM-powered NPCs land on the same
-finding from different directions. An ICIDS/Springer case study of
-Mantella in Skyrim found immersion and agency rose, but "technical
-integration issues damaged immersion and believability when LLM
-capabilities exceeded game design constraints." A VR interrogation study
-(arXiv 2507.10469, 18 participants, GPT-4 Turbo) scored believability
-6.67/10, with *agency* the weakest sub-score at 5.34/10 — the model talks
-fine, it just can't act on what it says. An NPC offers to meet you at the
-mill; there is no mill; the game cannot bind the offer to anything real.
-That is not a model-quality failure. It is an unvalidated-binding failure,
-and it is the same failure both studies independently found.
+Two independent studies of LLM-powered NPCs found the same failure from
+different directions: an ICIDS case study of Mantella, and a VR interrogation
+study (arXiv 2507.10469) that scored believability 6.67/10 with *agency* weakest
+at 5.34/10. An NPC offers to meet you at the mill; there is no mill. The model
+talks fine — it just can't act on what it says. That is an unvalidated binding,
+not a model-quality problem.
 
 ## Three differentiators
 
-**1. In-process small models as mechanics, not chatbots.** Judging beats
-generating at small scale: log-prob style scoring hit 85% top-1 accuracy on
-held-out paraphrases in Ghost in the Wreck (2.9M-parameter transformer,
-trained from scratch), which turns "type anything" into a real mechanic
-that is visibly unscriptable. A model that small embeds directly in a
-game's own process — 4 MB of int8 weights, no server, no API key, no
-per-player cost — a category difference from the 7 GB remote-brain installs
-every shipped Bethesda AI-NPC mod requires today. Scoring a single
-candidate is one forward pass, not a generate+STT+TTS round trip, so it's a
-different *class* of latency, not a percentage improvement on one.
+**1. Small models as mechanics, not chatbots.** Judging beats generating at
+small scale: log-prob style scoring hit 85% top-1 on held-out paraphrases with a
+2.9M-parameter transformer trained from scratch. That turns "type anything" into
+a mechanic that is visibly unscriptable, in 4 MB of int8 weights that embed in
+the game's own process — no server, no API key, no per-player cost. Scoring one
+candidate is a single forward pass, not a generate+STT+TTS round trip: a
+different latency class, not a percentage improvement.
 
-**2. Gated dynamic assets.** Quests, maps, dialogue and items generated as
-data, then passed through an executable validator before the player sees
-them, with a handwritten fallback whenever the gate fails. Never hard-gate
-the critical path on model output. This is the lesson both academic studies
-above independently rediscovered, and it's already built: Ghost in the
-Wreck's format parser, flood-fill map lint, PyTorch↔JS parity test, and
-calibration harness are exactly this pattern, proven on a shipped game.
+**2. Gated dynamic assets.** Content generated as data, passed through an
+executable validator before the player sees it, with a handwritten fallback
+whenever the gate fails. Never hard-gate the critical path on model output.
+Already built and shipped: format parser, flood-fill map lint, PyTorch↔JS parity
+test, calibration harness.
 
-**3. Numbers, in a field of vibes.** Every claim ships with a measured
-figure and a script that reproduces it. This document is the first
-instance of that habit; the table below is the reusable artifact.
+**3. Numbers, in a field of vibes.** Every claim ships with a measured figure and
+a script that reproduces it.
 
 ## Competitive landscape
 
@@ -60,23 +48,18 @@ instance of that habit; the table below is the reusable artifact.
 | Mantella | Fallout 4 | 224 | 0.13.0 | 2025-03-31 | F4SE + Address Library; ~7 GB base install; 6 GB free RAM/VRAM for a local model. Stale 17 months — the direct incumbent. |
 | Numen | Fallout: New Vegas | 43 | 1.7.1 | 2026-08-17 | xNVSE + JIP LN NVSE; cloud or local (Gemma 4 12B, ~2 s) |
 
-*\*Endorsements are a Nexus engagement proxy, not a download count — Nexus
-does not expose downloads publicly. Re-verify current numbers on the mod
-pages before citing this table outside this program.*
+*\*Endorsements are a Nexus engagement proxy, not downloads. Re-verify before
+citing outside this program.*
 
-Every mod above is a remote-brain architecture: the game talks HTTP to a
-7B+ model server plus separate TTS/STT services, on a multi-gigabyte
-install. **None of them publishes any evaluation of output quality** — no
-benchmark, no accuracy metric, no A/B test. The sharpest illustration:
-Mantella's author fine-tuned and shipped a Llama-3-8B on 8,800+ real
-interactions, then deprecated it as "performs worse than newer,
-non-fine-tuned models" — with no numbers behind the claim. The only
-quantified figures anywhere in that project are latency *targets* (aim for
-an LLM under 0.5 s), not measurements of what shipped.
+Every mod above is a remote-brain architecture: HTTP to a 7B+ model server plus
+separate TTS/STT, on a multi-gigabyte install. **None publishes any evaluation of
+output quality** — no benchmark, no accuracy metric, no A/B test. Mantella's
+author fine-tuned a Llama-3-8B on 8,800+ real interactions, then deprecated it as
+"performs worse than newer, non-fine-tuned models," with no numbers behind the
+claim.
 
-*No widely-used Bethesda AI mod embeds its model in-process today, as far
-as this survey found — worth re-confirming immediately before repeating
-that claim to a studio or in public.*
+*No widely-used Bethesda AI mod embeds its model in-process, as far as this
+survey found — re-confirm before repeating it publicly.*
 
 ## Six studio objections, answered with numbers
 
@@ -91,13 +74,6 @@ that claim to a studio or in public.*
 
 ## Status
 
-This draft satisfies milestone M0.2's content requirement — thesis, three
-differentiators, competitive table, six-objections table, each answer
-sourced to a measured figure rather than an opinion. It is marked
-`in_progress`, not `done`, in `PLAN.md`: the milestone's gate is a review
-gate ("read aloud in under four minutes," approved by Jonas), which this
-agent cannot self-certify. Two claims are explicitly flagged above as
-needing re-verification before external use: the Nexus endorsement figures
-(proxy, not downloads) and the "no widely-used Bethesda AI mod embeds
-in-process" claim (asserted from the current survey, not exhaustively
-checked against every mod on Nexus).
+Content complete: thesis, differentiators, both tables, every answer sourced to a
+measured figure rather than an opinion. M0.2's gate is a review gate, which this
+agent cannot self-certify.
