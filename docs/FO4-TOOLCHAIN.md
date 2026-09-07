@@ -61,9 +61,9 @@ Audited 2026-09-07. Checked items need no action.
 
 | Component | Required | On this machine | Action |
 |---|---|---|---|
-| Fallout 4 | 1.11.240, Steam | **Not installed** — download queued, 0 bytes fetched | See §3 |
-| Free space on C: | ~60 GB during install | **51 GB free of 931 GB** | **Blocking — see §3** |
-| MSVC | 2022 Build Tools, C++23 (19.4x) | **2019 Build Tools, MSVC 14.29** | Install VS 2022 Build Tools |
+| Fallout 4 | 1.11.240, Steam | **1.11.240.0 installed**, buildid `24564252` | Disable auto-updates (§1) |
+| Free space | headroom for CK, MO2, builds | C: 51 GB of 931 GB (95% used); **D: 908 GB of 932 GB** | Put new installs on D: — §3 |
+| MSVC | 2022 Build Tools, C++23 (19.4x) | **2019 Build Tools 16.11, MSVC 14.29** | Install Build Tools 2022 — §2.2 |
 | Windows SDK | 10.0.22621+ | 10.0.19041 | Comes with the above |
 | xmake | 3.0.0+ | **Not installed** | `winget install xmake-io.xmake` |
 | Node.js | any LTS | v20.10.0 (Windows-side only) | See §5 |
@@ -72,7 +72,7 @@ Audited 2026-09-07. Checked items need no action.
 | Creation Kit | latest | Not installed | Bethesda launcher — needed for `PapyrusCompiler.exe` |
 | Mod Organizer 2 | 2.5+ | **Not installed** | github.com/ModOrganizer2 |
 
-### You do not need the Visual Studio IDE
+### 2.2 Getting MSVC 2022 — you do not need the Visual Studio IDE
 
 You need the **compiler**, not the IDE. **Visual Studio Build Tools 2022** with
 the "Desktop development with C++" workload is a free, command-line-only install
@@ -84,38 +84,82 @@ What will *not* work is the MSVC 14.29 already on this machine. CommonLibF4 sets
 `set_languages("c++23")`; VS 2019 tops out at C++20. This is a hard stop, not a
 warning.
 
-## 3. Blocking: disk space
+**The existing Visual Studio Installer will not offer you 2022.** It is a
+2019-era installer pinned to the 2019 channel and does not know 2022 products
+exist. Run Microsoft's 2022 bootstrapper instead: it upgrades the installer
+itself, then installs Build Tools 2022 *side by side* with 2019. Nothing is
+removed.
 
-`appmanifest_377160.acf` currently reads:
+Get it from Microsoft only — <https://aka.ms/vs/17/release/vs_BuildTools.exe>,
+or via Downloads → "Tools for Visual Studio" → "Build Tools for Visual
+Studio 2022" at <https://visualstudio.microsoft.com/downloads/>. Anything
+offering "VS Build Tools 2022" from the Visual Studio Marketplace is a
+third-party extension, not the compiler, and will not work.
 
-    BytesToDownload   27,324,171,488   (~27.3 GB)
-    BytesToStage      28,918,512,137   (~28.9 GB)
-    BytesDownloaded   0
+With winget:
 
-Against **51 GB free**. Steam stages content before committing it to the install
-folder, so peak usage during a fresh install approaches the sum of both figures —
-roughly 56 GB. This download is likely to fail partway through, after hours.
+```powershell
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override `
+  "--quiet --wait --norestart --installPath D:\VS\BuildTools2022 --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
 
-Do one of these before letting it run:
+Or from the downloaded bootstrapper:
 
-1. **Free ~20 GB on C:.** The Steam library on this machine already holds several
-   30–60 GB titles (Metro Exodus ~61 GB, Witcher 3 ~30 GB, Truck sims ~38 GB);
-   uninstalling one and reinstalling it later is the cheapest fix.
-2. **Install to a different drive.** Steam → Settings → Storage → add a library
-   folder, then set Fallout 4's install location before the download starts.
-   Everything in this document works unchanged; set `FO4_PATH` accordingly.
+```powershell
+.\vs_BuildTools.exe --installPath D:\VS\BuildTools2022 `
+  --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart
+```
 
-Whichever you pick, note that the modding install wants headroom beyond the game
-itself: MO2 profiles, a full Creation Kit, unpacked base scripts and build
-artifacts add up to several GB more.
+`--installPath` on D: keeps the ~7 GB workload off a drive at 95%. Note that a
+shared component cache of roughly 1.5 GB still goes to C: regardless; that is a
+Visual Studio design decision, not something the flags can override.
+
+Verify from a Developer Command Prompt for VS 2022:
+
+```
+cl.exe            # must report 19.4x — if it says 19.29, you are in the 2019 prompt
+```
+
+## 3. Where things go: C: is full, D: is empty
+
+C: sits at 95% used (51 GB free of 931 GB). D: is essentially untouched — 908 GB
+free of 932 GB. The download landed on C: with room to spare, so nothing is
+blocked, but every remaining install should default to D:.
+
+| What | Where | Why |
+|---|---|---|
+| Fallout 4 (27 GB, already on C:) | move to D: | Optional but recommended. Steam → Properties → Installed Files → Move install folder. Frees 27 GB on the drive that is nearly full. |
+| VS Build Tools 2022 (~7 GB) | D: | `--installPath D:\VS\BuildTools2022`. ~1.5 GB of shared cache still goes to C: regardless. |
+| Creation Kit | follows the game | It installs alongside Fallout 4, so moving the game moves the CK's future home too. Do the move first. |
+| Mod Organizer 2 + mods | D: | Mod staging grows without limit. Never put it on C:. |
+| Build output | wherever the repo is | Small; irrelevant either way. |
+
+### If you move the game to D:
+
+Two things reference the install path and must follow it:
+
+- `scripts/build-papyrus.bat` defaults to the C: Steam path. Set the override:
+
+  ```powershell
+  setx FO4_PATH "D:\SteamLibrary\steamapps\common\Fallout 4"
+  ```
+
+- If you use xmake's deploy step, set `XSE_FO4_GAME_PATH` (or
+  `XSE_FO4_MODS_PATH` for an MO2 mods folder) to match.
+
+Do the move **before** installing the Creation Kit and MO2, not after — Steam
+moves the game cleanly on its own, but the CK and MO2 both record absolute paths
+at install time and are far more annoying to relocate afterwards.
 
 ## 4. Install order
 
 The order matters — each step's verification depends on the previous one.
 
-1. **Fallout 4**, from Steam. Launch it once, to the main menu, so it writes
-   `Documents\My Games\Fallout4\`. Quit. Disable auto-updates (§1).
-2. **Record the version** (§1) and write it into §7.
+1. ~~**Fallout 4**, from Steam.~~ **Done** — 1.11.240.0, buildid `24564252`.
+   Still outstanding: launch it once to the main menu so it writes
+   `Documents\My Games\Fallout4\`, quit, and **disable auto-updates** (§1).
+   If moving to D:, do that first (§3).
+2. ~~**Record the version.**~~ **Done** — see §7.
 3. **Visual Studio Build Tools 2022**, "Desktop development with C++".
    Verify: `cl.exe` reports 19.4x from a Developer Command Prompt.
 4. **xmake 3.0.0+**. Verify: `xmake --version`.
@@ -170,11 +214,15 @@ blocked waiting for an upstream release.
 
 ## 7. The pin record
 
-Fill in when M0.3's gate passes. Append, never overwrite.
+Append, never overwrite — which version shipped which release is evidence.
 
 | Date | Game runtime | Steam BuildID | F4SE | commonlibf4 commit | MSVC |
 |---|---|---|---|---|---|
-| _pending_ | _expected 1.11.240_ | `24564252` (target) | _expected 0.7.9_ | `16cff687` | _pending_ |
+| 2026-09-07 | **1.11.240.0** | `24564252` | _pending 0.7.9_ | `16cff687` | _pending 14.4x_ |
+
+The runtime is confirmed from `Fallout4.exe`'s `FileVersion`, and it matches
+both F4SE's 0.7.9 line and `commonlibf4`'s `RUNTIME_LATEST`. The remaining two
+columns fill in when the gate first passes.
 
 ## 8. The M0.3 gate
 
