@@ -569,12 +569,15 @@ rules:
       },
       "depends_on": [],
       "est_hours": 10,
-      "actual_hours": 4,
-      "status": "in_progress",
+      "actual_hours": 9,
+      "status": "done",
       "evidence": [
-        "repos/fo4-hello/ — FO4Hello F4SE plugin scaffold (xmake, libxse/commonlibf4 @ 16cff687), Papyrus natives GetAnswer/GetGreeting",
-        "repos/wreck-works/docs/FO4-TOOLCHAIN.md — version pin, prerequisite audit, install order, breakage protocol",
-        "repos/wreck-works/tools/verify-dll.js — M0.3 gate; runs and fails correctly against a missing build"
+        "repos/fo4-hello/ — FO4Hello F4SE plugin (xmake, libxse/commonlibf4 @ 16cff687); Papyrus natives GetAnswer/GetGreeting bound from C++, driven by a self-test that needs no console",
+        "repos/wreck-works/docs/FO4-TOOLCHAIN.md — pin record, prerequisite audit, install order, game-update breakage protocol",
+        "repos/wreck-works/tools/verify-dll.js + verify-dll.config.json — the gate",
+        "gate green 2026-09-07: node tools/verify-dll.js -> exit 0, 9/9 checks",
+        "Pinned: game 1.11.240.0 (Steam buildid 24564252), F4SE 0.7.9, commonlibf4 16cff687, MSVC 14.44.35207",
+        "Log evidence: \"GetAnswer -> 42\" / \"self-test GetAnswer returned 42\" / \"self-test GetGreeting returned \\\"Hello from C++, Jonas!\\\"\" — both directions, int and string"
       ]
     },
     {
@@ -1373,6 +1376,16 @@ rules:
       "date": "2026-09-07",
       "decision": "PLAN.md and POSITIONING.md moved from docs/ to the repo root, and the duplicate copy of plan-lint.js under docs/ deleted; tools/plan-lint.js is the only one.",
       "rationale": "M0.1's gate command is literally 'node tools/plan-lint.js PLAN.md' and its evidence records 'repos/wreck-works/PLAN.md', but the file sat in docs/ — so a milestone marked done had a gate command that could not actually run as written. Moving the file repairs the gate rather than rewriting the record of what was gated. docs/ keeps the technical notes (FO4-TOOLCHAIN.md and the factory docs)."
+    },
+    {
+      "date": "2026-09-07",
+      "decision": "M0.3 gate is self-driving: the plugin dispatches the Papyrus call itself on kNewGame/kPostLoadGame rather than relying on a human typing cgf into the game console.",
+      "rationale": "The standing rule is that every gate is executable, and a gate needing a human at a keyboard is not. It also unblocked a real obstacle: Fallout 4 binds the console to a physical key position, and on Danish hardware under an en-US language that key is neither tilde nor reliably reachable. The dispatch goes through the same VM path the console would use, so nothing about the boundary is faked — only the human is removed."
+    },
+    {
+      "date": "2026-09-07",
+      "decision": "Corrected: a Native Hidden Papyrus script still requires compilation, so the Creation Kit is on the critical path for PapyrusCompiler.exe. It avoids needing an ESP, a quest or a form, not the compiler.",
+      "rationale": "Measured, not assumed. With the DLL loaded and BindNativeMethod reporting no error, dispatch was still cancelled: binding a native and registering a type are separate operations, and the VM type table is populated from compiled scripts only. Two further traps cost a cycle each and are now written down in docs/FO4-TOOLCHAIN.md — the Creation Kit comes from Steam (appid 1946160) since the Bethesda.net Launcher was retired in 2022, and Fallout 4 ships sResourceDataDirsFinal=STRINGS\\ which silently ignores every loose file outside that one directory."
     }
   ],
   "agent_protocol": {
