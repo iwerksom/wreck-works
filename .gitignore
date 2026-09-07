@@ -9,3 +9,11 @@ projects.json
 
 # Run state lives with each project, at <project>/.factory/ — never here.
 state/
+
+# Windows NTFS alternate-data-stream metadata, created when an archive is
+# extracted from a browser download. Never content.
+*:Zone.Identifier
+
+# The plan agent is a standalone personal skill, deliberately not vendored into
+# any one project repo (decision 2026-09-03). Kept locally, never committed.
+.claude/

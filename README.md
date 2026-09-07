@@ -31,7 +31,11 @@ project's `pipeline.json` says. A second game is a second `pipeline.json`.
     projects.json        which projects this factory builds (gitignored; local)
     projects.example.json  the committed template
     templates/  a real, complete pipeline.json to copy for a new game
-    docs/       pipeline design, schema reference, and the build playbook
+    PLAN.md     the Language Models in Games program: prose plan above,
+                machine-readable plan-state below. tools/plan-lint.js gates it.
+    POSITIONING.md  the thesis the plan's evidence is built to support
+    docs/       pipeline design, schema reference, the build playbook, and
+                per-toolchain setup notes
 
 Run state is **not** stored here. Each project keeps its own at
 `<project>/.factory/`, so the factory stays stateless and a project carries its
