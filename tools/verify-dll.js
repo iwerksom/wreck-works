@@ -20,8 +20,13 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULTS = {
-  // Where xmake drops the release build, relative to the plugin repo.
-  dll: '../fo4-hello/build/windows/x64/releasedbg/FO4Hello.dll',
+  // Where xmake drops the build. Which subdirectory depends on the active mode
+  // (`release` vs `releasedbg`), which is easy to change and easy to forget, so
+  // accept a list and take the first that exists rather than pinning one.
+  dll: [
+    '../fo4-hello/build/windows/x64/release/FO4Hello.dll',
+    '../fo4-hello/build/windows/x64/releasedbg/FO4Hello.dll'
+  ],
   // CommonLibF4 logs to Documents\My Games\Fallout4\F4SE\<PluginName>.log.
   log: '/mnt/c/Users/%USER%/Documents/My Games/Fallout4/F4SE/FO4Hello.log',
   // Exact strings from src/main.cpp. Changing one there means changing it here.
@@ -126,7 +131,10 @@ function loadConfig(root) {
   cfg.log = cfg.log.replace('%USER%', user);
 
   const resolve = (p) => (path.isAbsolute(p) ? p : path.resolve(root, p));
-  cfg.dll = resolve(cfg.dll);
+  const candidates = (Array.isArray(cfg.dll) ? cfg.dll : [cfg.dll]).map(resolve);
+  // Keep every candidate around so a miss can report what it looked for.
+  cfg.dllCandidates = candidates;
+  cfg.dll = candidates.find((c) => fs.existsSync(c)) || candidates[0];
   cfg.log = resolve(cfg.log);
   return cfg;
 }
@@ -140,7 +148,10 @@ function main() {
   const pass = [];
 
   if (!fs.existsSync(cfg.dll)) {
-    failures.push(`DLL not found: ${cfg.dll}\n    Build it first: xmake build (in the fo4-hello repo).`);
+    failures.push(
+      `DLL not found. Looked in:\n${cfg.dllCandidates.map((c) => `      ${c}`).join('\n')}\n` +
+      '    Build it first: xmake build (in the fo4-hello repo).'
+    );
     return report(pass, failures, cfg);
   }
   const dllStat = fs.statSync(cfg.dll);

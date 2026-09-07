@@ -268,9 +268,26 @@ Then run the gate from WSL, in the wreck-works repo:
 "/mnt/c/Program Files/nodejs/node.exe" tools/verify-dll.js
 ```
 
-`tools/verify-dll.config.json` carries the two machine-specific paths — the
-build output on D: and the log under the Windows user profile — so the script
-itself stays portable. `FO4HELLO_DLL` and `FO4HELLO_LOG` override either.
+`tools/verify-dll.config.json` carries the machine-specific paths — the build
+output on D: and the log under the Windows user profile — so the script itself
+stays portable. `FO4HELLO_DLL` and `FO4HELLO_LOG` override either.
+
+**Those paths are Windows paths, not WSL mount paths.** The gate runs under the
+Windows Node install because there is no `node` in WSL, so `/mnt/d/...` is
+invisible to it and every check silently fails at the first hurdle. Write
+`D:\dev\...`, not `/mnt/d/dev/...`.
+
+The `dll` key accepts a list and takes the first entry that exists, because
+which subdirectory xmake writes to depends on the active mode (`release` vs
+`releasedbg`) — easy to change, easy to forget.
+
+### Status: 2026-09-07
+
+The static half passes. `xmake build` produces a 64-bit PE32+ DLL exporting
+`F4SEPlugin_Version`, which also confirms CommonLibF4's Papyrus binding API,
+`BSFixedString` marshalling and `REL::GetFileVersion` all compile against the
+pinned library commit. The log half is still red and needs F4SE, the Address
+Library and the Creation Kit's Papyrus compiler.
 
 `tools/verify-dll.js` checks two independent things, because either alone is easy
 to fool:

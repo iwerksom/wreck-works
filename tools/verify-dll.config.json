@@ -1,5 +1,8 @@
 {
-  "_comment": "The plugin repo lives on the Windows filesystem, not in WSL: MSVC handles UNC working directories badly and building across the 9p bridge is slow. Paths are given as WSL mounts because that is where the gate runs from.",
-  "dll": "/mnt/d/dev/fo4-hello/build/windows/x64/releasedbg/FO4Hello.dll",
-  "log": "/mnt/c/Users/Jonas Schoustrup-T/Documents/My Games/Fallout4/F4SE/FO4Hello.log"
+  "_comment": "Paths are WINDOWS paths: the gate runs under the Windows Node install (there is no node in WSL), so /mnt/... mount paths are invisible to it. The plugin repo lives on the Windows filesystem because MSVC handles UNC working directories badly. Both xmake modes are listed; the first that exists wins.",
+  "dll": [
+    "D:\\dev\\fo4-hello\\build\\windows\\x64\\release\\FO4Hello.dll",
+    "D:\\dev\\fo4-hello\\build\\windows\\x64\\releasedbg\\FO4Hello.dll"
+  ],
+  "log": "C:\\Users\\Jonas Schoustrup-T\\Documents\\My Games\\Fallout4\\F4SE\\FO4Hello.log"
 }
