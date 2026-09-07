@@ -194,9 +194,42 @@ The order matters — each step's verification depends on the previous one.
    Keeping only the matching file means the install cannot silently disagree
    with §7, and a wrong-version `.bin` is one of the few ways to get a plugin
    that loads and then behaves unpredictably rather than failing cleanly.
-7. **Mod Organizer 2**, with a Fallout 4 instance. Create a clean profile named
-   `dev` and leave it empty — M0.4's gate needs a genuinely clean profile, and
-   it is much easier to keep one than to make one later.
+7. **Mod Organizer 2** (github.com/ModOrganizer2/modorganizer — GitHub or the
+   project's Nexus page only; MO2 has a long history of malicious mirrors).
+   Install to D:. Choose a **portable** instance, not a global one: a global
+   instance stages mods under `%LOCALAPPDATA%` on C:, and mod staging grows
+   without limit.
+
+   Enable all three profile options — profile-specific INIs, profile-specific
+   saves, and automatic archive invalidation. Then create two profiles:
+
+   - `dev` — mods enabled, your working setup
+   - `clean` — mods disabled, no saves, the model of a fresh user
+
+   Two consequences worth knowing before they surprise you. Profile-specific
+   saves means a new profile starts with **no** save games; the real ones stay
+   in `Documents\My Games\Fallout4\Saves` and must be copied into
+   `profiles\<name>\saves\` — with their `.f4se` cosaves, which carry
+   serialized plugin data and are useless separated from their `.fos`. And
+   profile-specific INIs are copied in once, so INI edits made outside MO2 after
+   that never reach the profile.
+
+   Keep the saves split anyway: Papyrus bakes script state into saves, so a save
+   contaminated by an earlier build of a script mod produces phantom behaviour
+   that reads exactly like a code bug.
+
+   **Everything goes through MO2, nothing loose in the game folder.** The game
+   directory should hold only F4SE's loader files and vanilla content; plugins
+   and scripts live in `mods\<name>\` and are injected by MO2's virtual
+   filesystem at launch. Verified 2026-09-08: with
+   `Data\F4SE\Plugins\` empty and no `FO4Hello.pex` on disk, the M0.3 gate
+   still passes end to end. That is what makes the install disposable — and it
+   is a precondition for M0.4's gate, which asks whether a mod works from a
+   genuinely clean state. You cannot answer that against a contaminated
+   baseline.
+
+   Launch F4SE from MO2's Run dropdown. Running `f4se_loader.exe` directly
+   bypasses the virtual filesystem and loads none of it.
 8. **Creation Kit** — from **Steam**, as the free app *Fallout 4: Creation Kit*
    (appid `1946160`). **Not** the Bethesda.net Launcher: that was retired in
    2022, which is the trap here — following an older guide leaves you believing
