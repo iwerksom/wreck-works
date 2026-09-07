@@ -207,7 +207,27 @@ The order matters — each step's verification depends on the previous one.
    sources on its import path.
 
    Required, not optional: see "The .pex is not optional" in §8.
-9. **The plugin repo** — it lives at `D:\dev\fo4-hello`, on the **Windows**
+9. **Enable loose files.** Fallout 4 ships with
+   `sResourceDataDirsFinal=STRINGS\` in `Fallout4.ini`, which restricts loose
+   file loading to that one directory. Everything else on disk — scripts,
+   meshes, textures — is ignored no matter how correctly it is placed. Append to
+   `Documents\My Games\Fallout4\Fallout4Custom.ini`:
+
+   ```ini
+   [Archive]
+   bInvalidateOlderFiles=1
+   sResourceDataDirsFinal=
+   ```
+
+   The empty value is deliberate, not a typo: it clears the whitelist.
+
+   This is a prerequisite for the whole program, not just M0.3 — every loose
+   `.pex`, `.dll` script binding and asset from here on depends on it. It also
+   fails in the least helpful way possible: nothing errors, nothing warns, the
+   file is simply never read, so the symptom is a valid artifact in the right
+   directory that the game behaves as though does not exist.
+
+10. **The plugin repo** — it lives at `D:\dev\fo4-hello`, on the **Windows**
    filesystem, not in WSL. MSVC handles UNC working directories
    (`\\wsl.localhost\...`) badly and building across the 9p bridge is slow, so
    anything MSVC compiles belongs on a real Windows drive. From PowerShell:
