@@ -185,8 +185,15 @@ The order matters — each step's verification depends on the previous one.
 5. **F4SE 0.7.9**. Extract `f4se_loader.exe`, `f4se_*.dll` and `Data\` into the
    game root. Verify: launch `f4se_loader.exe`, open the console, type
    `getf4seversion`.
-6. **Address Library for F4SE Plugins** (Nexus 47327) — the *next-gen* file, not
-   the 1.10.163 one. Installs to `Data\F4SE\Plugins\`.
+6. **Address Library for F4SE Plugins** (Nexus 47327). The F4SE download page
+   links straight here, which is a good hint about how mandatory it is.
+
+   The "All In One" archive contains a `.bin` for every runtime ever shipped
+   (~170 MB). Copy only the one matching your pinned runtime into
+   `Data\F4SE\Plugins\` — for 1.11.240 that is `version-1-11-240-0.bin`.
+   Keeping only the matching file means the install cannot silently disagree
+   with §7, and a wrong-version `.bin` is one of the few ways to get a plugin
+   that loads and then behaves unpredictably rather than failing cleanly.
 7. **Mod Organizer 2**, with a Fallout 4 instance. Create a clean profile named
    `dev` and leave it empty — M0.4's gate needs a genuinely clean profile, and
    it is much easier to keep one than to make one later.
