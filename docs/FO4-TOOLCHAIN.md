@@ -197,9 +197,16 @@ The order matters — each step's verification depends on the previous one.
 7. **Mod Organizer 2**, with a Fallout 4 instance. Create a clean profile named
    `dev` and leave it empty — M0.4's gate needs a genuinely clean profile, and
    it is much easier to keep one than to make one later.
-8. **Creation Kit**, from the Bethesda launcher. Then unpack
-   `Data\Scripts\Source\Base.zip` in place — the Papyrus compiler needs those
+8. **Creation Kit** — from **Steam**, as the free app *Fallout 4: Creation Kit*
+   (appid `1946160`). **Not** the Bethesda.net Launcher: that was retired in
+   2022, which is the trap here — following an older guide leaves you believing
+   the CK is installed when nothing landed on disk at all.
+
+   It installs into the Fallout 4 folder and brings `Papyrus Compiler\`. Then
+   unpack `Data\Scripts\Source\Base.zip` in place — the compiler needs those
    sources on its import path.
+
+   Required, not optional: see "The .pex is not optional" in §8.
 9. **The plugin repo** — it lives at `D:\dev\fo4-hello`, on the **Windows**
    filesystem, not in WSL. MSVC handles UNC working directories
    (`\\wsl.localhost\...`) badly and building across the 9p bridge is slow, so
@@ -292,6 +299,26 @@ invisible to it and every check silently fails at the first hurdle. Write
 The `dll` key accepts a list and takes the first entry that exists, because
 which subdirectory xmake writes to depends on the active mode (`release` vs
 `releasedbg`) — easy to change, easy to forget.
+
+### The .pex is not optional
+
+Measured, not assumed. With the DLL loaded and `BindNativeMethod` reporting no
+error, dispatching `FO4Hello.GetAnswer` through the VM still fails:
+
+    [I] FO4Hello: running self-test
+    [E] FO4Hello: self-test GetAnswer was cancelled
+    [E] FO4Hello: self-test dispatch failed — is FO4Hello.pex in Data/Scripts?
+
+So binding a native and registering a *type* are separate things. The VM's type
+table is populated from compiled scripts only; `BindNativeMethod` attaches a
+function to a type that must already exist, and silently succeeds when it does
+not. Without the `.pex` there is nothing to dispatch to and the stack is
+cancelled before it runs.
+
+The practical consequence: the Creation Kit is on M0.3's critical path after
+all, purely for `PapyrusCompiler.exe`. A `Native Hidden` script still avoids
+needing an ESP, a quest or any form — but it does not avoid needing to be
+compiled.
 
 ### Status: 2026-09-07
 
