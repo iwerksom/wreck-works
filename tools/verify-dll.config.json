@@ -1,0 +1,5 @@
+{
+  "_comment": "The plugin repo lives on the Windows filesystem, not in WSL: MSVC handles UNC working directories badly and building across the 9p bridge is slow. Paths are given as WSL mounts because that is where the gate runs from.",
+  "dll": "/mnt/d/dev/fo4-hello/build/windows/x64/releasedbg/FO4Hello.dll",
+  "log": "/mnt/c/Users/Jonas Schoustrup-T/Documents/My Games/Fallout4/F4SE/FO4Hello.log"
+}

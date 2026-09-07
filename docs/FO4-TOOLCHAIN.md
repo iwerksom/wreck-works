@@ -193,12 +193,21 @@ The order matters — each step's verification depends on the previous one.
 8. **Creation Kit**, from the Bethesda launcher. Then unpack
    `Data\Scripts\Source\Base.zip` in place — the Papyrus compiler needs those
    sources on its import path.
-9. **The plugin repo**:
+9. **The plugin repo** — it lives at `D:\dev\fo4-hello`, on the **Windows**
+   filesystem, not in WSL. MSVC handles UNC working directories
+   (`\\wsl.localhost\...`) badly and building across the 9p bridge is slow, so
+   anything MSVC compiles belongs on a real Windows drive. From PowerShell:
 
-   ```bash
-   git clone --recurse-submodules <fo4-hello> && cd fo4-hello
+   ```powershell
+   cd D:\dev\fo4-hello
    xmake build
    ```
+
+   Note `;` rather than `&&` if you put both on one line — Windows PowerShell
+   5.1 rejects `&&` as a statement separator. PowerShell 7+ accepts it.
+
+   xmake finds MSVC through `vswhere` on its own; a Developer Command Prompt is
+   not required. The first build also fetches xmake's package dependencies.
 
 ## 5. Node.js from WSL
 
@@ -246,10 +255,22 @@ first passes.
 
 ## 8. The M0.3 gate
 
-```bash
-cd ../fo4-hello && xmake build
-cd ../wreck-works && "/mnt/c/Program Files/nodejs/node.exe" tools/verify-dll.js
+Build on the Windows side (PowerShell):
+
+```powershell
+cd D:\dev\fo4-hello
+xmake build
 ```
+
+Then run the gate from WSL, in the wreck-works repo:
+
+```bash
+"/mnt/c/Program Files/nodejs/node.exe" tools/verify-dll.js
+```
+
+`tools/verify-dll.config.json` carries the two machine-specific paths — the
+build output on D: and the log under the Windows user profile — so the script
+itself stays portable. `FO4HELLO_DLL` and `FO4HELLO_LOG` override either.
 
 `tools/verify-dll.js` checks two independent things, because either alone is easy
 to fool:
