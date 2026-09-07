@@ -237,11 +237,12 @@ Append, never overwrite — which version shipped which release is evidence.
 
 | Date | Game runtime | Steam BuildID | F4SE | commonlibf4 commit | MSVC |
 |---|---|---|---|---|---|
-| 2026-09-07 | **1.11.240.0** | `24564252` | _pending 0.7.9_ | `16cff687` | _pending 14.4x_ |
+| 2026-09-07 | **1.11.240.0** | `24564252` | _pending 0.7.9_ | `16cff687` | **14.44.35207** (VS 17.14, cl 19.44) |
 
 The runtime is confirmed from `Fallout4.exe`'s `FileVersion`, and it matches
-both F4SE's 0.7.9 line and `commonlibf4`'s `RUNTIME_LATEST`. The remaining two
-columns fill in when the gate first passes.
+both F4SE's 0.7.9 line and `commonlibf4`'s `RUNTIME_LATEST`. The MSVC toolset is
+confirmed present via `vswhere -requires`. F4SE fills in when the gate
+first passes.
 
 ## 8. The M0.3 gate
 
