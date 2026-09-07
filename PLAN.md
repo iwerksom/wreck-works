@@ -302,7 +302,7 @@ rules:
   "name": "Language Models in Games",
   "owner": "Jonas Schoustrup-Thomsen",
   "created": "2026-09-03",
-  "updated": "2026-09-07",
+  "updated": "2026-09-08",
   "horizon": {
     "start": "2026-09-07",
     "end": "2027-02-21",
@@ -546,10 +546,14 @@ rules:
       },
       "depends_on": [],
       "est_hours": 6,
-      "actual_hours": 5,
-      "status": "in_progress",
+      "actual_hours": 6,
+      "status": "done",
       "evidence": [
-        "repos/wreck-works/POSITIONING.md (draft complete, awaiting review sign-off per the review gate)"
+        "repos/wreck-works/POSITIONING.md",
+        "approved by Jonas, 2026-09-08",
+        "gate criterion 1 — six objections each answered with a measured figure and its source: cost (4 MB int8 at 2.9M params), latency (~100 tok/s local vs 6.9s mean remote loop, arXiv 2507.10469), determinism (exact top-10 logit parity vs PyTorch), safety (tokens/char >=0.74 nonsense vs <=0.43 English, cleanly separated), certification (85% top-1 on held-out paraphrases), failure modes (19 issues found by a 9-mission adversarial squad)",
+        "gate criterion 2 — read aloud under four minutes: 480 words of prose = 3.2 min at 150 wpm (was 742 words / 4.9 min before the 2026-09-07 trim)",
+        "Caveats carried in the doc for external use: Nexus endorsements are an engagement proxy not downloads, and the \"no widely-used Bethesda AI mod embeds in-process\" claim is from this survey, not exhaustively checked"
       ]
     },
     {
@@ -1386,6 +1390,11 @@ rules:
       "date": "2026-09-07",
       "decision": "Corrected: a Native Hidden Papyrus script still requires compilation, so the Creation Kit is on the critical path for PapyrusCompiler.exe. It avoids needing an ESP, a quest or a form, not the compiler.",
       "rationale": "Measured, not assumed. With the DLL loaded and BindNativeMethod reporting no error, dispatch was still cancelled: binding a native and registering a type are separate operations, and the VM type table is populated from compiled scripts only. Two further traps cost a cycle each and are now written down in docs/FO4-TOOLCHAIN.md — the Creation Kit comes from Steam (appid 1946160) since the Bethesda.net Launcher was retired in 2022, and Fallout 4 ships sResourceDataDirsFinal=STRINGS\\ which silently ignores every loose file outside that one directory."
+    },
+    {
+      "date": "2026-09-08",
+      "decision": "M0.2 approved by Jonas and marked done. POSITIONING.md was trimmed from 742 to 480 words of prose first, to meet its own read-aloud criterion.",
+      "rationale": "The content requirement had been met since 2026-09-03, but the four-minute criterion was failing by roughly 25% on prose alone and nearly 2x counting tables — the milestone would have been signed off against a gate it did not pass. Both tables were kept byte-for-byte so no measured figure or source was lost; what was cut was prose the tables already carried, plus a Status section explaining why the document was unsigned."
     }
   ],
   "agent_protocol": {
