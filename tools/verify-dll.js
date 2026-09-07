@@ -33,7 +33,11 @@ const DEFAULTS = {
   markers: [
     'FO4Hello: plugin loaded',
     'FO4Hello: papyrus natives registered',
-    'FO4Hello: GetAnswer -> 42'
+    // The native ran: the VM resolved the type and dispatched into C++.
+    'FO4Hello: GetAnswer -> 42',
+    // ...and the value made it back across the boundary, which the line above
+    // alone does not prove.
+    'FO4Hello: self-test GetAnswer returned 42'
   ],
   // Exports F4SE resolves by name when it considers loading a plugin.
   requiredExports: ['F4SEPlugin_Version']
