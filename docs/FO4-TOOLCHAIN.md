@@ -320,6 +320,25 @@ the runtime from `Fallout4.exe`'s `FileVersion`, F4SE from
 `f4se_1_11_240.dll`'s (`0,0,7,9`), MSVC via `vswhere -requires`. The row is
 complete; the game install is now fully pinned.
 
+Tooling, pinned the same way:
+
+| Tool | Version | Location |
+|---|---|---|
+| Mod Organizer 2 | 2.5.2 (portable) | `D:\Modding\MO2` |
+| xEdit / FO4Edit | 4.1.5f | `D:\Modding\xEdit.4.1.5f` |
+| Creation Kit | Steam appid 1946160 | in the game folder |
+| xmake | 3.x | `C:\Program Files\xmake` |
+
+xEdit ships family binaries — `xFOEdit`, `xTESEdit`, `xSFEdit`, each with a
+64-bit variant — and picks its game from its own filename. There is no
+`FO4Edit.exe` in the archive; copy `xFOEdit64.exe` to `FO4Edit64.exe` to get one.
+Copy rather than rename, so the originals stay usable for the rest of the family.
+
+Register both MO2 tools as MO2 executables and launch them from there. Anything
+started outside MO2 misses the virtual filesystem: F4SE loads no mods at all, and
+xEdit silently reads the vanilla `Data` folder rather than what the game actually
+loads — which looks like working software giving wrong answers.
+
 The F4SE DLL is named for the runtime it supports, so `f4se_1_11_240.dll`
 sitting next to a 1.11.240.0 `Fallout4.exe` is itself the compatibility check.
 A mismatch here is the single most common reason F4SE silently fails to load
