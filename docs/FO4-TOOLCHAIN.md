@@ -246,12 +246,17 @@ Append, never overwrite — which version shipped which release is evidence.
 
 | Date | Game runtime | Steam BuildID | F4SE | commonlibf4 commit | MSVC |
 |---|---|---|---|---|---|
-| 2026-09-07 | **1.11.240.0** | `24564252` | _pending 0.7.9_ | `16cff687` | **14.44.35207** (VS 17.14, cl 19.44) |
+| 2026-09-07 | **1.11.240.0** | `24564252` | **0.7.9** | `16cff687` | **14.44.35207** (VS 17.14, cl 19.44) |
 
-The runtime is confirmed from `Fallout4.exe`'s `FileVersion`, and it matches
-both F4SE's 0.7.9 line and `commonlibf4`'s `RUNTIME_LATEST`. The MSVC toolset is
-confirmed present via `vswhere -requires`. F4SE fills in when the gate
-first passes.
+Every column is confirmed from the artifact itself, not from a download page:
+the runtime from `Fallout4.exe`'s `FileVersion`, F4SE from
+`f4se_1_11_240.dll`'s (`0,0,7,9`), MSVC via `vswhere -requires`. The row is
+complete; the game install is now fully pinned.
+
+The F4SE DLL is named for the runtime it supports, so `f4se_1_11_240.dll`
+sitting next to a 1.11.240.0 `Fallout4.exe` is itself the compatibility check.
+A mismatch here is the single most common reason F4SE silently fails to load
+anything.
 
 ## 8. The M0.3 gate
 
@@ -300,7 +305,18 @@ to fool:
   The freshness comparison is the load-bearing part: without it, a log from last
   week passes the gate forever.
 
-To produce the log, launch via `f4se_loader.exe` and run in the console:
+To produce the log, launch via `f4se_loader.exe` — **not** Steam's Play button,
+which starts the game without F4SE and produces no log at all.
+
+`getf4seversion` and `cgf` are **in-game console** commands, not shell commands.
+Open the console with the tilde key (`~`, left of `1`), type, press Escape.
+
+The Papyrus VM does not start at the main menu, so `papyrus natives registered`
+only appears once you are actually in the world. From the main menu console,
+`coc qasmoke` teleports straight into a test cell and skips the intro entirely —
+much faster than starting a new game.
+
+Then run in the console:
 
     cgf "FO4Hello.GetAnswer"
     cgf "FO4Hello.GetGreeting" "Jonas"
