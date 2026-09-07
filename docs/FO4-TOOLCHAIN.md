@@ -316,7 +316,13 @@ To produce the log, launch via `f4se_loader.exe` — **not** Steam's Play button
 which starts the game without F4SE and produces no log at all.
 
 `getf4seversion` and `cgf` are **in-game console** commands, not shell commands.
-Open the console with the tilde key (`~`, left of `1`), type, press Escape.
+Open the console with the key **left of `1`**, type, press Escape.
+
+That key is not `~` on this machine. The layout here is `0409:00000406` —
+English (US) language with a **Danish keyboard** — and Fallout 4 binds the
+console to a physical key position, not to a character. Left of `1` on Danish
+hardware is **`½ §`**, so that is the console key. `Win+Space` to switch to the
+en-US layout is the fallback if the physical key does not register.
 
 The Papyrus VM does not start at the main menu, so `papyrus natives registered`
 only appears once you are actually in the world. From the main menu console,
