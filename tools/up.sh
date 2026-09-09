@@ -16,29 +16,62 @@ if curl -sf -o /dev/null --max-time 2 "$HARNESS/" 2>/dev/null; then
     exit 1
 fi
 
-# kill 0 signals this script's whole process group, so next-server and the
-# worker's node process go too — not just the npm wrappers.
-trap 'trap - EXIT INT TERM; echo; echo "[up] stopping"; kill 0' EXIT INT TERM
+# Killing the npm wrapper leaves next-server and the worker's node process
+# orphaned, so walk each child's tree. `kill 0` would be shorter, but it
+# signals the whole process group — fine from an interactive shell, where this
+# job gets its own group, and a foot-gun from anything that starts it as part
+# of a larger script.
+kill_tree() {
+    local pid=$1 child
+    for child in $(pgrep -P "$pid" 2>/dev/null); do
+        kill_tree "$child"
+    done
+    kill "$pid" 2>/dev/null
+}
+
+pids=()
+cleanup() {
+    trap - EXIT INT TERM
+    echo
+    echo "[up] stopping"
+    local pid
+    for pid in "${pids[@]}"; do
+        kill_tree "$pid"
+    done
+}
+trap cleanup EXIT INT TERM
 
 # sed -u, or its block buffer holds a quiet stream for minutes. The claim
 # poll is a heartbeat twice a second and would drown everything else, so
 # only the successful ones are dropped — a failing claim still shows.
-npm run dev 2>&1 \
+# Each pipeline runs in a subshell so $! is the parent of the whole chain.
+# From a bare pipeline $! is sed, whose siblings — not children — are npm
+# and next-server, so kill_tree would walk the wrong branch and orphan them.
+( npm run dev 2>&1 \
     | grep --line-buffered -v 'POST /api/jobs/claim 200' \
-    | sed -u 's/^/[panel]  /' &
+    | sed -u 's/^/[panel]  /' ) &
+pids+=($!)
 
 printf '[up] waiting for the panel on %s ' "$HARNESS"
+ready=""
 for _ in $(seq 1 90); do
     if curl -sf -o /dev/null --max-time 2 "$HARNESS/" 2>/dev/null; then
+        ready=1
         echo "- ready"
         break
     fi
     printf '.'
     sleep 1
 done
+if [ -z "$ready" ]; then
+    echo "- gave up after 90s"
+    echo "[up] the panel never answered; not starting a worker against nothing."
+    exit 1
+fi
 
 # Started second and only once the panel answers, so the worker does not open
 # with a screen of "harness unreachable".
-HARNESS="$HARNESS" npm run worker 2>&1 | sed -u 's/^/[worker] /' &
+( HARNESS="$HARNESS" npm run worker 2>&1 | sed -u 's/^/[worker] /' ) &
+pids+=($!)
 
 wait

@@ -9,6 +9,7 @@ export default function Factory() {
   const [jobs, setJobs] = useState([]);
   const [sel, setSel] = useState(null);        // selected step id
   const [llmStream, setLlmStream] = useState(null);
+  const [link, setLink] = useState("ok");   // panel reachable? "ok" | "down"
   const streamRef = useRef(null);
 
   const q = proj ? `?project=${encodeURIComponent(proj)}` : "";
@@ -18,14 +19,25 @@ export default function Factory() {
       setProjects(r.projects || []);
       setProj(cur => cur || r.active);
       if (r.error) setErr(r.error);
-    });
+    }).catch(() => setLink("down"));   // the poll below retries
   }, []);
 
   const refresh = useCallback(async () => {
-    const [p, j] = await Promise.all([
-      fetch("/api/pipeline" + q).then(r => r.json()),
-      fetch("/api/jobs" + q).then(r => r.json()),
-    ]);
+    let p, j;
+    try {
+      [p, j] = await Promise.all([
+        fetch("/api/pipeline" + q).then(r => r.json()),
+        fetch("/api/jobs" + q).then(r => r.json()),
+      ]);
+    } catch {
+      // The panel is restarting, or this tab has outlived it. Keep the last
+      // board on screen rather than throwing: this runs every 2.5s, so an
+      // unhandled rejection here is a crash overlay on every dev reload, and
+      // the next tick is already the retry.
+      setLink("down");
+      return;
+    }
+    setLink("ok");
     if (p.error) { setErr(p.error); setData(null); return; }
     setErr(null);
     setData(p);
@@ -108,8 +120,10 @@ export default function Factory() {
         )}
         <span className="sub">{pipeline.steps.length} steps · pipeline v{pipeline.version}{data.project ? " · " + data.project.root : ""}</span>
         <span className="spacer" />
-        <span className={"workerdot " + (workerAlive ? "on" : "off")}>
-          {workerAlive ? "● worker active" : "○ worker offline — run: npm run worker"}
+        <span className={"workerdot " + (link === "ok" && workerAlive ? "on" : "off")}>
+          {link === "down"
+            ? "○ panel unreachable — is npm run up still running?"
+            : workerAlive ? "● worker active" : "○ worker offline — run: npm run worker"}
         </span>
       </div>
       <div className="wrap">
