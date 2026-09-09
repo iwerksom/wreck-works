@@ -52,7 +52,11 @@ Ubuntu or Linux, node 20+.
     cp projects.example.json projects.json     # roots are relative — siblings just work
     npm run setup
 
-Two terminals:
+One terminal:
+
+    npm run up         # panel on http://localhost:3100, plus the worker
+
+Or separately, if you want to restart one without the other:
 
     npm run dev        # panel on http://localhost:3100
     npm run worker     # the hands

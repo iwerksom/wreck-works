@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { loadPipeline } from "../../../lib/pipeline";
 import { readDb } from "../../../lib/store";
 import { projectFrom } from "../../../lib/projects";
+import { workerLastSeen } from "../../../lib/presence";
 
 export const dynamic = "force-dynamic";
 
@@ -38,5 +39,6 @@ export async function GET(req) {
     project: { id: project.id, name: project.name, root: project.root },
     pipeline,
     status,
+    workerSeen: workerLastSeen(),
   });
 }

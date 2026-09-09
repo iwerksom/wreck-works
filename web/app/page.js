@@ -44,8 +44,11 @@ export default function Factory() {
   const step = pipeline.steps.find(s => s.id === sel);
   const st = sel ? status[sel] : null;
   const lastJob = st && st.lastJobId ? jobs.find(j => j.id === st.lastJobId) : null;
-  const workerAlive = jobs.some(j => j.claimed && Date.now() - j.claimed < 60000) ||
-    jobs.some(j => j.finished && Date.now() - j.finished < 60000);
+  // The worker heartbeats on every poll of /api/jobs/claim (POLL_MS, 2s by
+  // default), so anything inside a few missed polls is live. This used to be
+  // inferred from job timestamps, which called a healthy idle worker offline
+  // 60s after its last job.
+  const workerAlive = data.workerSeen > 0 && Date.now() - data.workerSeen < 10000;
 
   async function setWorker(id, worker) {
     await fetch(`/api/steps/${id}${q}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ worker }) });
@@ -106,7 +109,7 @@ export default function Factory() {
         <span className="sub">{pipeline.steps.length} steps · pipeline v{pipeline.version}{data.project ? " · " + data.project.root : ""}</span>
         <span className="spacer" />
         <span className={"workerdot " + (workerAlive ? "on" : "off")}>
-          {workerAlive ? "● worker active" : "○ worker offline — run: node worker/worker.js"}
+          {workerAlive ? "● worker active" : "○ worker offline — run: npm run worker"}
         </span>
       </div>
       <div className="wrap">

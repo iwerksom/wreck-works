@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { update } from "../../../../lib/store";
 import { listProjects, getProject } from "../../../../lib/projects";
+import { markWorkerSeen } from "../../../../lib/presence";
 
 export const dynamic = "force-dynamic";
 
 // A worker claims the oldest queued job. With no ?project= the worker serves
 // every configured project, which is the point of a factory.
 export async function POST(req) {
+  // Every poll is a heartbeat, including the ones that claim nothing —
+  // an idle worker is still a live worker.
+  markWorkerSeen();
   let scope;
   try {
     const id = new URL(req.url).searchParams.get("project");
