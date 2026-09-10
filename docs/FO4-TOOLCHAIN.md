@@ -66,7 +66,7 @@ Audited 2026-09-07. Checked items need no action.
 | MSVC | 2022 Build Tools, C++23 (19.4x) | **2019 Build Tools 16.11, MSVC 14.29** | Install Build Tools 2022 — §2.2 |
 | Windows SDK | 10.0.22621+ | 10.0.19041 | Comes with the above |
 | xmake | 3.0.0+ | **Not installed** | `winget install xmake-io.xmake` |
-| Node.js | any LTS | v20.10.0 (Windows-side only) | See §5 |
+| Node.js | any LTS | v20.10.0 Windows-side; **also in WSL since 2026-09-09** | See §5 |
 | F4SE | 0.7.9 | Not installed | f4se.silverlock.org |
 | Address Library for F4SE Plugins | next-gen version | Not installed | Nexus mod 47327 |
 | Creation Kit | latest | Not installed | Bethesda launcher — needed for `PapyrusCompiler.exe` |
@@ -278,15 +278,18 @@ The order matters — each step's verification depends on the previous one.
 
 ## 5. Node.js from WSL
 
-`node` is not on the WSL `PATH`; only the Windows install is present. The gate
-scripts therefore run as:
+**Node is installed inside WSL as of 2026-09-09.** `plan-lint.js` and anything
+else that only touches repo-relative paths now run the ordinary way:
 
 ```bash
-"/mnt/c/Program Files/nodejs/node.exe" tools/verify-dll.js
+node tools/plan-lint.js
 ```
 
-This applies to `plan-lint.js` too. Worth adding a shell alias, or installing
-Node inside WSL, before this becomes a daily papercut.
+Previously only the Windows install existed, and every gate had to be invoked as
+`"/mnt/c/Program Files/nodejs/node.exe" ...`. That is no longer necessary — but
+it is still *sometimes correct*, because which Node runs a script now decides
+how that script's paths must be written. `tools/verify-dll.js` is the one place
+where it matters; see §8.
 
 ## 6. When a game update breaks everything
 
@@ -363,10 +366,32 @@ Then run the gate from WSL, in the wreck-works repo:
 output on D: and the log under the Windows user profile — so the script itself
 stays portable. `FO4HELLO_DLL` and `FO4HELLO_LOG` override either.
 
-**Those paths are Windows paths, not WSL mount paths.** The gate runs under the
-Windows Node install because there is no `node` in WSL, so `/mnt/d/...` is
-invisible to it and every check silently fails at the first hurdle. Write
-`D:\dev\...`, not `/mnt/d/dev/...`.
+### The config and the interpreter must agree
+
+**Which Node runs this gate decides how its paths must be written**, and getting
+it wrong fails silently in both directions. Since 2026-09-09 there is a Node in
+WSL too, so this is now a real choice rather than a given.
+
+`loadConfig` resolves with `path.isAbsolute` and then `fs.existsSync`. Under
+POSIX `path` — which is what WSL Node uses — `D:\dev\...` is **not** absolute,
+so it gets resolved relative to the repo root, produces nonsense, and every
+check fails at the first hurdle. Nothing errors about drive letters; the gate
+simply reports a missing DLL.
+
+Two coherent combinations, and no others:
+
+| Interpreter | `dll` / `log` in the config | Note |
+|---|---|---|
+| **Windows Node** (`/mnt/c/Program Files/nodejs/node.exe`) | `D:\dev\...`, `C:\Users\...` | What the committed config assumes. Keep using this unless you change both. |
+| **WSL Node** (`node`) | `/mnt/d/dev/...`, `/mnt/c/Users/...` | Also set `FO4_WINDOWS_USER` — under WSL, `process.env.USER` is the *Linux* account name, so a `%USER%` substitution in the log path silently resolves to the wrong profile. |
+
+The committed config is the first row. Changing it to the second means editing
+both entries and its `_comment` together — a half-converted config is the worst
+of the three states, because the DLL check and the log check will disagree about
+which filesystem they are on.
+
+Unverified as of 2026-09-10: the WSL-Node combination has not been run. Only the
+Windows-Node path has ever produced a passing static check (§8, Status).
 
 The `dll` key accepts a list and takes the first entry that exists, because
 which subdirectory xmake writes to depends on the active mode (`release` vs
