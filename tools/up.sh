@@ -5,7 +5,11 @@
 # worker stays on a machine that has the toolchain — but locally you almost
 # always want both, and a half-started factory just reports "worker offline".
 set -u
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+# || exit, not set -e: this script runs traps, background subshells and wait,
+# where errexit interacts badly. Without the guard a failed cd is silent — the
+# script would carry on and start the panel in whatever directory it was called
+# from, since set -u does not catch a failing command.
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 PORT=${PORT:-3100}
 HARNESS=${HARNESS:-http://localhost:$PORT}
