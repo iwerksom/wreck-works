@@ -169,12 +169,20 @@ code, so treat the code as authoritative if the two ever disagree.
 The key belongs on the panel machine and nowhere else — never on the laptop,
 which never runs the panel.
 
-## 9. Not yet verified
+## 9. Verification status
 
-Stated plainly so nobody mistakes this document for a tested procedure:
+- **`tools/cloud-setup.sh` is proven on Linux.** `.github/workflows/setup.yml`
+  runs it on every pull request against a cold `ubuntu-latest` checkout — the
+  sibling clone, `projects.json`, `npm ci` and `next build` all pass, with no
+  `ANTHROPIC_API_KEY` present. That last part is the useful half: it confirms
+  the panel builds without a key, and that only RUN LLM STEP needs one. First
+  green run 2026-09-10, 38s.
 
-- **`npm ci` and `next build` have not been run for this project on any machine
-  in this workflow.** `tools/cloud-setup.sh` is written from the code and the
-  lockfile, not from a successful run. The first cloud session should run it and
-  correct this document.
-- The desktop's toolchain state is unaudited — §7 is an empty table on purpose.
+  The runner is also the only place the clone branch is ever exercised. A
+  developer machine always has `../ghost-in-the-wreck` already on disk, so a
+  local run skips it every time.
+- **The FO4 gate's WSL-node combination is still untested** — see
+  `FO4-TOOLCHAIN.md` §8. The committed config assumes Windows Node, and
+  switching it needs a machine where the DLL exists.
+- **The desktop's toolchain state is unaudited** — §7 is an empty table on
+  purpose.
