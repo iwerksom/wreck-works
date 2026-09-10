@@ -21,6 +21,7 @@ project's `pipeline.json` says. A second game is a second `pipeline.json`.
 - Writing a `pipeline.json`: [`docs/PIPELINE-SCHEMA.md`](docs/PIPELINE-SCHEMA.md)
 - What building the pilot actually taught us: [`docs/AGENT-LEARNINGS.md`](docs/AGENT-LEARNINGS.md)
   — the playbook for the next one. Read this first if you are starting a game.
+- Working from a laptop with no toolchain: [`docs/CLOUD-SANDBOX.md`](docs/CLOUD-SANDBOX.md)
 
 ## Layout
 

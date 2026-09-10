@@ -1,5 +1,5 @@
 {
-  "_comment": "Paths are WINDOWS paths: the gate runs under the Windows Node install (there is no node in WSL), so /mnt/... mount paths are invisible to it. The plugin repo lives on the Windows filesystem because MSVC handles UNC working directories badly. Both xmake modes are listed; the first that exists wins.",
+  "_comment": "Paths are WINDOWS paths, so this file only works under the Windows Node install: run it as \"/mnt/c/Program Files/nodejs/node.exe\" tools/verify-dll.js. Under WSL's node (installed 2026-09-09) a D:\\ path is not absolute on POSIX, so it resolves against the repo root and every check fails as a missing file rather than as a bad path. To switch, convert BOTH entries to /mnt/... and set FO4_WINDOWS_USER — see docs/FO4-TOOLCHAIN.md section 8. The plugin repo lives on the Windows filesystem because MSVC handles UNC working directories badly. Both xmake modes are listed; the first that exists wins.",
   "dll": [
     "D:\\dev\\fo4-hello\\build\\windows\\x64\\release\\FO4Hello.dll",
     "D:\\dev\\fo4-hello\\build\\windows\\x64\\releasedbg\\FO4Hello.dll"
