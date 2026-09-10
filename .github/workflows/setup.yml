@@ -28,10 +28,10 @@ jobs:
           node-version: 20
 
       - name: shellcheck
-        # Scoped to this one script on purpose. tools/up.sh predates any linting
-        # and may carry findings; widening the glob is a separate change that
-        # should stand or fall on its own.
-        run: shellcheck tools/cloud-setup.sh
+        # Every shell script in tools/, not just the new one. up.sh predates any
+        # linting, so this is the run that finds out whether it was clean by
+        # accident or by construction.
+        run: shellcheck tools/*.sh
 
       # Clones the sibling game repo, writes projects.json, runs npm ci.
       - name: provision
