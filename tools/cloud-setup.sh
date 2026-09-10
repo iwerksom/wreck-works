@@ -13,6 +13,39 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 GAME_REPO=${GAME_REPO:-https://github.com/iwerksom/ghost-in-the-wreck.git}
+NODE_MIN=20
+
+# --- preflight ---------------------------------------------------------------
+# A missing or too-old toolchain is the likeliest way this script fails in a
+# fresh sandbox, and bash's own "npm: command not found" names neither the
+# requirement nor where it is written down. Nothing else enforces it either:
+# web/package.json has no "engines" field, so npm will happily install under
+# node 18 and leave the failure to `next build` much later, by which point the
+# error no longer mentions node at all.
+#
+# Deliberately a plain string rather than an array: `${arr[@]}` on an empty
+# array is an unbound-variable error under `set -u` in bash before 4.4.
+missing=""
+for cmd in git node npm; do
+    command -v "$cmd" >/dev/null 2>&1 || missing="$missing $cmd"
+done
+if [ -n "$missing" ]; then
+    echo "[setup] missing required tool(s):$missing" >&2
+    echo "[setup] this repo needs git and node ${NODE_MIN}+ — see README, 'Running it'." >&2
+    exit 1
+fi
+
+node_major=$(node -p 'process.versions.node.split(".")[0]')
+if [ "$node_major" -lt "$NODE_MIN" ]; then
+    echo "[setup] node $(node -v) is too old; this repo needs ${NODE_MIN}+." >&2
+    exit 1
+fi
+
+# Not fatal: `npm run dev` is fine without curl. Only tools/up.sh needs it, to
+# poll the panel before it starts the worker — and it fails there with a bare
+# "curl: command not found" long after this script has reported success.
+command -v curl >/dev/null 2>&1 \
+    || echo "[setup] note: curl is missing — 'npm run up' needs it; 'npm run dev' does not."
 
 # The factory is stateless and reads the game from a sibling directory:
 # projects.example.json points root at ../ghost-in-the-wreck. Clone only this
