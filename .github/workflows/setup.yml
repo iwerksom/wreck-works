@@ -1,0 +1,45 @@
+# Proves tools/cloud-setup.sh actually provisions a fresh Linux machine, which
+# is the one thing no amount of reading can establish. The runner is a genuine
+# cold start: no sibling game repo, no projects.json, no node_modules — so the
+# clone branch that a re-run on a developer machine always skips is exercised
+# here every time.
+name: setup
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  cloud-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 20 is the README's floor and what the preflight enforces. Pinning the
+      # major here means a bump to that floor has to be made in both places
+      # deliberately, rather than CI silently drifting onto whatever is newest.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: shellcheck
+        # Scoped to this one script on purpose. tools/up.sh predates any linting
+        # and may carry findings; widening the glob is a separate change that
+        # should stand or fall on its own.
+        run: shellcheck tools/cloud-setup.sh
+
+      # Clones the sibling game repo, writes projects.json, runs npm ci.
+      - name: provision
+        run: tools/cloud-setup.sh
+
+      - name: verify the layout the factory expects
+        run: |
+          test -d ../ghost-in-the-wreck || { echo "sibling game repo missing"; exit 1; }
+          test -f projects.json         || { echo "projects.json missing"; exit 1; }
+
+      # The claim the docs have been carrying unverified since day one.
+      # No ANTHROPIC_API_KEY is set: the panel must build without it, and only
+      # RUN LLM STEP may fail at runtime for want of it.
+      - name: build the panel
+        run: npm run build
