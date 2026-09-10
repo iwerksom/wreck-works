@@ -57,7 +57,10 @@ Git Bash — with an error that points at the shell rather than at git.
 
 ## 4. Activity A: changing the factory from a sandbox
 
-Run `tools/cloud-setup.sh`. It handles the two things a fresh sandbox gets wrong:
+Run `tools/cloud-setup.sh`. It checks for git, node 20+ and npm before touching
+anything — `web/package.json` has no `engines` field, so nothing else catches a
+too-old node until `next build` fails much later with an error that no longer
+mentions node. Then it handles the two things a fresh sandbox gets wrong:
 
 **The pilot game must be cloned as a sibling.** `projects.example.json` sets
 `root` to `../ghost-in-the-wreck`. Clone only this repo and `npm run setup` still
