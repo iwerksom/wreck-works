@@ -7,6 +7,9 @@ web/.env.local
 # Local project wiring — projects.example.json is the committed template.
 projects.json
 
+# Per-machine shell settings read by tools/with-node.sh, e.g. NODE_PORTABLE.
+local.env
+
 # Run state lives with each project, at <project>/.factory/ — never here.
 state/
 
