@@ -94,16 +94,19 @@ avoid.
 
 Measured 2026-09-11 on the travel laptop, cold:
 
-| | node 20.20.2 | node 22.23.2 |
+| | node 20 + next 14 | node 22 + next 16 |
 |---|---|---|
 | `npm ci` (33 packages) | 45s | 59s |
-| `next dev` ready | 18s | — |
-| first page compile | 37s | — |
-| `next build` | — | passes |
+| `next dev` ready | 18s | **1.9s** |
+| first page compile | 37s | sub-second |
+| `next build` | passes | passes |
 | `EBADENGINE` warnings | 5 | **none** |
+| `npm audit` | 1 critical, 1 high | **clean** |
 
-Both columns are real runs, not estimates. The `EBADENGINE` row is why the floor
-moved to 22 — see §9.
+Every cell is a real run, not an estimate. The `EBADENGINE` and `npm audit` rows
+are why both versions moved — see §9. The startup difference is Turbopack, which
+is the default bundler in Next 16; it is the single biggest quality-of-life
+change for working on a slow machine.
 
 That is well inside usable. The prediction that this laptop was too slow for
 `next dev` was wrong: the board renders all 19 steps, the step drawer opens, and
@@ -210,12 +213,11 @@ Prefer a private mesh (Tailscale or equivalent) that only your own devices can
 reach. If a public tunnel is ever unavoidable, put HTTP auth in front of it and
 treat the key as compromised afterwards.
 
-**Do not set up any tunnel while the panel is on `next@14.2.35`.** `npm audit`
-on 2026-09-11 reports a critical advisory for unauthenticated remote code
-execution on Windows-hosted Next.js servers, plus a high on `postcss`, both
-fixed only by `next@16.3.4` — a breaking major. Bound to `localhost` the
-exposure is limited; the entire point of a tunnel is to stop it being bound to
-localhost. Upgrade first, then tunnel.
+The advisory that previously blocked this is cleared. On `next@14.2.35`,
+`npm audit` reported a critical for unauthenticated remote code execution on
+Windows-hosted Next.js servers plus a high on `postcss`; the panel now runs
+`next@16.3.4` and audits clean. Re-run `npm audit` before exposing the panel
+rather than trusting this paragraph — it is true on the date above and decays.
 
 ## 6. Which gates run where
 
@@ -297,6 +299,14 @@ the desktop. It never needs to exist on both.
   All three now say 22. Verified on portable node 22.23.2: clean `npm ci` with
   no `EBADENGINE`, `next build` passes, and the preflight correctly rejects
   node 20 with exit 1.
+- **The panel runs Next 16, and the dynamic routes were checked at runtime.**
+  `params` became a promise in Next 15; the old synchronous form does not throw,
+  it just yields `undefined`, so `/api/jobs/[id]` would have missed every lookup
+  and `/api/steps/[id]` would have written to `db.steps["undefined"]`. A build
+  cannot catch either. Verified live on 2026-09-11: `/api/jobs/1` returns the
+  real job while `/api/jobs/99999` returns null, and a PATCH to
+  `/api/steps/format_spec` landed under that key with no `undefined` key
+  created. Test state was removed afterwards.
 - **The FO4 gate's WSL-node combination is still untested** — see
   `FO4-TOOLCHAIN.md` §8. The committed config assumes Windows Node, and
   switching it needs a machine where the DLL exists.
