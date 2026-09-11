@@ -20,11 +20,10 @@ NODE_MIN=22
 # fresh sandbox, and bash's own "npm: command not found" names neither the
 # requirement nor where it is written down.
 #
-# Nothing else enforces the floor either. web/package.json has no "engines"
-# field of its own; its dependencies do declare one — ai and the @ai-sdk
-# packages want node >= 22 — but npm only warns EBADENGINE and carries on, so
-# an under-floor node installs cleanly and fails later somewhere that never
-# mentions node.
+# Nothing else hard-enforces the floor. web/package.json declares
+# engines.node >= 22, and its ai and @ai-sdk dependencies declare the same, but
+# npm only warns EBADENGINE unless engine-strict is set — so an under-floor node
+# installs cleanly and fails later somewhere that never mentions node.
 #
 # Deliberately a plain string rather than an array: `${arr[@]}` on an empty
 # array is an unbound-variable error under `set -u` in bash before 4.4.
