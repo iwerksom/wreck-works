@@ -17,7 +17,7 @@ involved:
 | | What it is | Where it runs | Desktop powered on? |
 |---|---|---|---|
 | **A. Changing the factory** | editing `web/`, API routes, gate logic, `tools/`, docs | a cloud sandbox | no |
-| **B. Driving the panel** | the board, step drawer, artifact previews, SIGN OFF | the laptop | no |
+| **B. Driving the panel** | the board, the step drawer, SIGN OFF | the laptop | no |
 | **C. Running the gates** | RUN GATE, training, anything spawning `bash -lc` | the desktop | yes |
 
 Only C is genuinely constrained. A is ordinary Node development. B was assumed
@@ -67,11 +67,21 @@ mkdir -p ~/node-portable
 tar -xf node20.zip -C ~/node-portable --strip-components=1
 ```
 
-85 MB on disk. It never joins the system `PATH`; scope it per command instead:
+85 MB on disk. It never joins the system `PATH`; scope it per command instead.
+
+On a fresh checkout you still have to provision first — `web/node_modules` and
+`projects.json` do not exist yet, so `npm run dev` would fail on a missing
+`next` binary and then, once installed, show a board with no project. The setup
+script does both:
 
 ```bash
-PATH="$HOME/node-portable:$PATH" npm run dev
+PATH="$HOME/node-portable:$PATH" bash tools/cloud-setup.sh   # once
+PATH="$HOME/node-portable:$PATH" npm run dev                 # every time
 ```
+
+The prefix is needed on both. Export it for the shell if you prefer, but do not
+put it in your profile — that is the system install this section exists to
+avoid.
 
 ### What it actually costs, measured
 
@@ -85,10 +95,17 @@ Measured 2026-09-11, first run on the travel laptop:
 | after warm-up | responsive |
 
 That is well inside usable. The prediction that this laptop was too slow for
-`next dev` was wrong, and the board — 19 steps, artifact previews, the step
-drawer — works. Previews work specifically because the panel and the game repo
-share this filesystem, which is the same reason §5 argues against deploying the
-panel away from the projects.
+`next dev` was wrong: the board renders all 19 steps, the step drawer opens, and
+both `/api/pipeline` and `/api/projects` return real data resolved against the
+sibling repo.
+
+**Not** artifact previews, despite the name. `readArtifact` in
+`web/lib/pipeline.js` calls itself a "read-only artifact preview" and the README
+uses the phrase, but its only caller is `web/app/api/llm/route.js`, where it
+builds model input. The drawer's ARTIFACTS section renders `step.inputs` and
+`step.outputs` as comma-separated paths — no content, no preview route. Sharing
+a filesystem with the projects is what makes RUN LLM STEP work, not an operator
+preview that does not exist.
 
 What does **not** work here is any gate needing python+torch, Godot or
 Playwright. Gates degrade individually, so the board stays usable and only those
@@ -126,13 +143,32 @@ It builds the panel. It does not run the pilot's gates: no Godot, no torch, no
 Fallout 4. A green build in a container is evidence about the factory, never
 about the game. Do not read it as more than that.
 
-## 5. Activity B: running the factory from a cafe
+## 5. Activities B and C: panel here, gates there
 
-**Run both halves on the desktop and reach the panel over a private tunnel.**
-The laptop is a browser tab.
+**Default: run the panel on the laptop.** Nothing needs to be awake but the
+machine in front of you.
 
-    desktop:  npm run up          # panel :3100 + worker, one filesystem
-    laptop:   browser → tunnel → desktop:3100
+    laptop:   npm run dev         # panel :3100, browser → localhost
+
+The board, the step drawer and SIGN OFF all work. RUN GATE will fail for any
+step whose gate needs Godot, torch or Playwright, because none of that is here —
+gates degrade individually, so the rest of the board stays usable.
+
+### When you need the gates too
+
+Then the worker has to run where the toolchain is, and the panel has to be
+somewhere the worker can reach. Two shapes:
+
+    both on the desktop:  npm run up      # panel :3100 + worker, one filesystem
+                          laptop → private tunnel → desktop:3100
+
+    split:                laptop: npm run dev
+                          desktop: HARNESS=http://<laptop>:3100 npm run worker
+
+The split keeps the panel local and only borrows the desktop's toolchain, but
+both machines must be on the same network or mesh, and the desktop must reach
+*your* port rather than the other way round. The tunnel shape is the one
+`README.md` documents; see the warning below before setting either up.
 
 ### Why not deploy the panel and keep only the worker home
 
@@ -142,9 +178,11 @@ the README states plainly:
 
 1. **`web/lib/store.js` assumes a persistent disk.** It is four small functions
    over JSON files. Deploying means replacing them with KV or Postgres first.
-2. **A deployed panel cannot read project files.** Artifact previews and LLM step
-   inputs both assume the panel and the projects share a filesystem. Deploy the
-   panel and that whole class of feature goes dark.
+2. **A deployed panel cannot read project files.** `readArtifact` resolves paths
+   against `project.root` on local disk, and RUN LLM STEP is its only caller —
+   so a panel deployed away from the projects can still queue gates, but cannot
+   assemble the inputs for an LLM step. (The README calls this "artifact
+   previews"; there is no preview UI, only this.)
 
 Keeping the panel next to the projects avoids both. The tunnel is the cheaper
 change by a wide margin.
@@ -217,8 +255,12 @@ code, so treat the code as authoritative if the two ever disagree.
 | `FO4HELLO_DLL`, `FO4HELLO_LOG`, `FO4_WINDOWS_USER` | see config | `tools/verify-dll.js` | Fallout 4 gate only |
 
 `web/.env.local`, `.env`, `.env.local` and `projects.json` are all gitignored.
-The key belongs on the panel machine and nowhere else — never on the laptop,
-which never runs the panel.
+
+The key belongs on **whichever machine runs the panel**, and nowhere else. Since
+§5 makes that the laptop by default, that now usually means `web/.env.local` on
+the laptop — the opposite of what this section said before the panel was shown
+to run here. If you adopt the tunnel shape instead, the key follows the panel to
+the desktop. It never needs to exist on both.
 
 ## 9. Verification status
 
@@ -233,7 +275,7 @@ which never runs the panel.
   developer machine always has `../ghost-in-the-wreck` already on disk, so a
   local run skips it every time.
 - **The panel is proven on the travel laptop.** `npm ci`, `next dev`, the board,
-  both API routes and artifact previews, on portable node 20.20.2 under Windows
+  both API routes and the step drawer, on portable node 20.20.2 under Windows
   — 2026-09-11. Numbers in §3.
 - **Our node floor is below what the dependencies ask for.** `ai@7.0.84` and
   four `@ai-sdk/*` packages declare `engines.node >= 22`; the README, the
