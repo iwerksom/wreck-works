@@ -60,12 +60,19 @@ Download, verify and extract — the checksum step is not optional, this is a
 runtime you are about to execute:
 
 ```bash
-curl -s https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt | grep 'win-x64.zip$'
-curl -sL -o node22.zip https://nodejs.org/dist/latest-v22.x/node-v22.23.2-win-x64.zip
-sha256sum node22.zip          # must match the line above
+line=$(curl -s https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt | grep 'win-x64.zip$')
+file=${line##* }
+curl -sLO "https://nodejs.org/dist/latest-v22.x/$file"
+echo "$line" | sha256sum -c -     # must print OK; stop here if it does not
 mkdir -p ~/node-portable
-tar -xf node22.zip -C ~/node-portable --strip-components=1
+tar -xf "$file" -C ~/node-portable --strip-components=1
 ```
+
+The filename is derived from the checksum file rather than written out.
+`latest-v22.x` is a moving alias: hard-code a version beside it and the day
+Node 22.23.3 ships, the URL 404s while the checksum line describes an archive
+you never downloaded — a verification step that silently stops verifying.
+Pin `dist/v22.23.2/` instead if you want a fixed version; do not mix the two.
 
 85 MB on disk. It never joins the system `PATH`; scope it per command instead.
 
@@ -123,9 +130,10 @@ Git Bash — with an error that points at the shell rather than at git.
 ## 4. Activity A: changing the factory from a sandbox
 
 Run `tools/cloud-setup.sh`. It checks for git, node 22+ and npm before touching
-anything — `web/package.json` has no `engines` field, so nothing else catches a
-too-old node until `next build` fails much later with an error that no longer
-mentions node. Then it handles the two things a fresh sandbox gets wrong:
+anything. `web/package.json` declares `engines.node >= 22`, but npm only warns
+on a mismatch unless `engine-strict` is set, so the preflight is what actually
+stops an under-floor node before it produces a confusing failure later. Then it
+handles the two things a fresh sandbox gets wrong:
 
 **The pilot game must be cloned as a sibling.** `projects.example.json` sets
 `root` to `../ghost-in-the-wreck`. Clone only this repo and `npm run setup` still

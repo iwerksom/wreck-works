@@ -66,7 +66,7 @@ Audited 2026-09-07. Checked items need no action.
 | MSVC | 2022 Build Tools, C++23 (19.4x) | **2019 Build Tools 16.11, MSVC 14.29** | Install Build Tools 2022 — §2.2 |
 | Windows SDK | 10.0.22621+ | 10.0.19041 | Comes with the above |
 | xmake | 3.0.0+ | **Not installed** | `winget install xmake-io.xmake` |
-| Node.js | any LTS | v20.10.0 Windows-side; **also in WSL since 2026-09-09** | See §5 |
+| Node.js | **22+** | v20.10.0 Windows-side; also in WSL since 2026-09-09 | **Below the floor — see §5** |
 | F4SE | 0.7.9 | Not installed | f4se.silverlock.org |
 | Address Library for F4SE Plugins | next-gen version | Not installed | Nexus mod 47327 |
 | Creation Kit | latest | Not installed | Bethesda launcher — needed for `PapyrusCompiler.exe` |
@@ -285,7 +285,9 @@ else that only touches repo-relative paths now run the ordinary way:
 node tools/plan-lint.js
 ```
 
-Previously only the Windows install existed, and every gate had to be invoked as
+**The floor is now node 22+** — `ai` and the `@ai-sdk` packages declare
+`engines.node >= 22`, so the v20.10.0 recorded in §2 is below it and should be
+upgraded on this machine. Previously only the Windows install existed, and every gate had to be invoked as
 `"/mnt/c/Program Files/nodejs/node.exe" ...`. That is no longer necessary — but
 it is still *sometimes correct*, because which Node runs a script now decides
 how that script's paths must be written. `tools/verify-dll.js` is the one place
