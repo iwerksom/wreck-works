@@ -13,20 +13,25 @@ function resolve(req, body) {
   return projectFrom(req);
 }
 
+// params is a promise from Next 15 on, so it must be awaited before use. The
+// old synchronous form does not throw — `params.id` is simply undefined, and
+// Number(undefined) is NaN, so every lookup silently misses.
 export async function GET(req, { params }) {
+  const { id } = await params;
   const project = resolve(req, null);
   const db = readDb(project);
-  const job = db.jobs.find(j => j.id === Number(params.id));
+  const job = db.jobs.find(j => j.id === Number(id));
   return NextResponse.json({ job: job || null });
 }
 
 // worker posts progress/result: {log?, status?, exitCode?, projectId?}
 export async function POST(req, { params }) {
+  const { id } = await params;
   const body = await req.json();
   const project = resolve(req, body);
   let out = null;
   update(project, db => {
-    const job = db.jobs.find(j => j.id === Number(params.id));
+    const job = db.jobs.find(j => j.id === Number(id));
     if (!job) return;
     if (body.log) job.log = (job.log + body.log).slice(-100000);
     if (body.status) {
