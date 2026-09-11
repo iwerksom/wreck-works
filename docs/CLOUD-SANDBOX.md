@@ -74,21 +74,53 @@ Node 22.23.3 ships, the URL 404s while the checksum line describes an archive
 you never downloaded — a verification step that silently stops verifying.
 Pin `dist/v22.23.2/` instead if you want a fixed version; do not mix the two.
 
-85 MB on disk. It never joins the system `PATH`; scope it per command instead.
+100 MB on disk, and it never joins the system `PATH`.
 
-On a fresh checkout you still have to provision first — `web/node_modules` and
-`projects.json` do not exist yet, so `npm run dev` would fail on a missing
-`next` binary and then, once installed, show a board with no project. The setup
-script does both:
+### Running things without the prefix
+
+`tools/with-node.sh` puts node on `PATH` for one command, wherever this machine
+keeps it:
 
 ```bash
-PATH="$HOME/node-portable:$PATH" bash tools/cloud-setup.sh   # once
-PATH="$HOME/node-portable:$PATH" npm run dev                 # every time
+bash tools/with-node.sh                 # starts the panel — the cafe case
+bash tools/with-node.sh npm run build
+bash tools/with-node.sh npm run worker
 ```
 
-The prefix is needed on both. Export it for the shell if you prefer, but do not
-put it in your profile — that is the system install this section exists to
-avoid.
+On a machine with a real node install it is a passthrough and prints nothing —
+the same command works on the desktop and the laptop, which is the point. It
+only goes looking when `node` is absent, so it can never shadow a working
+install with a portable one and leave the panel and the gates on different
+versions. `NODE_PORTABLE=/some/path` overrides where it looks.
+
+It has to be a shell script. An npm script — `npm run dev:portable` — cannot
+work, because running it requires npm already on `PATH`, which is the very
+thing being arranged.
+
+**Or put it in your profile.** Nothing is wrong with adding
+
+```bash
+export PATH="$HOME/node-portable:$PATH"
+```
+
+to `~/.bashrc` and then using plain `npm run dev`. An earlier version of this
+document warned against that on the grounds that always-available node invites
+running expensive work on the weakest machine; §3's measurements then showed
+the laptop handles the panel comfortably, so the warning outlived its reason.
+The tradeoff that remains is only this: a profile export helps one user on one
+machine and leaves no trace in the repo, while the script works for anyone who
+clones it. Do both if you like — the script is a no-op once node is on `PATH`.
+
+### First run on a fresh checkout
+
+`web/node_modules` and `projects.json` do not exist yet, so starting the panel
+would fail on a missing `next` binary and then, once installed, show a board
+with no project. Provision first:
+
+```bash
+bash tools/with-node.sh bash tools/cloud-setup.sh   # once
+bash tools/with-node.sh                             # every time after
+```
 
 ### What it actually costs, measured
 
