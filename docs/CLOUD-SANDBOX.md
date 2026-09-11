@@ -87,11 +87,22 @@ bash tools/with-node.sh npm run build
 bash tools/with-node.sh npm run worker
 ```
 
-On a machine with a real node install it is a passthrough and prints nothing —
-the same command works on the desktop and the laptop, which is the point. It
-only goes looking when `node` is absent, so it can never shadow a working
-install with a portable one and leave the panel and the gates on different
-versions. `NODE_PORTABLE=/some/path` overrides where it looks.
+On a machine with a real install it is a passthrough and prints nothing — the
+same command works on the desktop and the laptop, which is the point.
+
+"Usable" means all three: `node`, `npm`, and a major at or above the floor. Any
+one of those missing and it looks for a portable runtime instead. Checking only
+for `node` would not be enough — every documented use runs `npm`, and a node
+below the floor is accepted here only to be rejected by `cloud-setup.sh`'s
+preflight moments later. The floor is read from `web/package.json`'s `engines`
+field rather than repeated in the script, so the two cannot drift.
+
+A usable install always wins, so a portable directory can never shadow one and
+leave the panel and the gates on different versions.
+
+Where it looks: `NODE_PORTABLE` if set, then `~/node-portable`. An exported
+`NODE_PORTABLE` beats the one in `local.env` — the file is the machine's
+default, not an override of what you just asked for.
 
 It has to be a shell script. An npm script — `npm run dev:portable` — cannot
 work, because running it requires npm already on `PATH`, which is the very
