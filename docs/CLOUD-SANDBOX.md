@@ -31,7 +31,7 @@ Most cafe sessions are A and B, and neither needs the desktop awake.
 | Machine | Role | Needs |
 |---|---|---|
 | Laptop | reading code, reviewing diffs, **and running the panel** | git, portable node |
-| Cloud sandbox | activity A — edit, build, test, push a branch | Linux, node 20+ |
+| Cloud sandbox | activity A — edit, build, test, push a branch | Linux, node 22+ |
 | Desktop | activity C — the worker, with the real toolchain | godot, python+torch, Playwright |
 
 ## 3. The laptop runs the panel
@@ -44,7 +44,7 @@ Audited 2026-09-10 on the travel laptop (Windows 10 Home), node added 2026-09-11
 | bash | present | Git Bash — ships with Git for Windows, no WSL distro needed |
 | curl | 8.21.0 | also from Git Bash; `tools/up.sh` needs it |
 | Git Credential Manager | active, system level | browser sign-in; no tokens to store |
-| node / npm | **portable, not installed** | v20.20.2 / 10.8.2 in `~/node-portable` |
+| node / npm | **portable, not installed** | v22.23.2 / 10.9.8 in `~/node-portable` |
 | WSL | present, **zero distributions** | nothing to run Linux in |
 | Repos | clones under `~/projects` | `wreck-works` + `ghost-in-the-wreck`, ~32 MB |
 
@@ -60,11 +60,11 @@ Download, verify and extract — the checksum step is not optional, this is a
 runtime you are about to execute:
 
 ```bash
-curl -s https://nodejs.org/dist/latest-v20.x/SHASUMS256.txt | grep 'win-x64.zip$'
-curl -sL -o node20.zip https://nodejs.org/dist/latest-v20.x/node-v20.20.2-win-x64.zip
-sha256sum node20.zip          # must match the line above
+curl -s https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt | grep 'win-x64.zip$'
+curl -sL -o node22.zip https://nodejs.org/dist/latest-v22.x/node-v22.23.2-win-x64.zip
+sha256sum node22.zip          # must match the line above
 mkdir -p ~/node-portable
-tar -xf node20.zip -C ~/node-portable --strip-components=1
+tar -xf node22.zip -C ~/node-portable --strip-components=1
 ```
 
 85 MB on disk. It never joins the system `PATH`; scope it per command instead.
@@ -85,14 +85,18 @@ avoid.
 
 ### What it actually costs, measured
 
-Measured 2026-09-11, first run on the travel laptop:
+Measured 2026-09-11 on the travel laptop, cold:
 
-| | |
-|---|---|
-| `npm ci` (33 packages) | 45s |
-| `next dev` ready | 18s |
-| first page compile | 37s |
-| after warm-up | responsive |
+| | node 20.20.2 | node 22.23.2 |
+|---|---|---|
+| `npm ci` (33 packages) | 45s | 59s |
+| `next dev` ready | 18s | — |
+| first page compile | 37s | — |
+| `next build` | — | passes |
+| `EBADENGINE` warnings | 5 | **none** |
+
+Both columns are real runs, not estimates. The `EBADENGINE` row is why the floor
+moved to 22 — see §9.
 
 That is well inside usable. The prediction that this laptop was too slow for
 `next dev` was wrong: the board renders all 19 steps, the step drawer opens, and
@@ -118,7 +122,7 @@ Git Bash — with an error that points at the shell rather than at git.
 
 ## 4. Activity A: changing the factory from a sandbox
 
-Run `tools/cloud-setup.sh`. It checks for git, node 20+ and npm before touching
+Run `tools/cloud-setup.sh`. It checks for git, node 22+ and npm before touching
 anything — `web/package.json` has no `engines` field, so nothing else catches a
 too-old node until `next build` fails much later with an error that no longer
 mentions node. Then it handles the two things a fresh sandbox gets wrong:
@@ -226,7 +230,7 @@ Record the results here the way `FO4-TOOLCHAIN.md` §2 does — an audit nobody
 wrote down is an audit nobody can trust next month.
 
 ```bash
-node --version; npm --version          # need node 20+
+node --version; npm --version          # need node 22+
 python3 -c 'import torch; print(torch.__version__)'
 command -v godot || echo "godot: MISSING"
 command -v curl  || echo "curl: MISSING — npm run up needs it"
@@ -275,14 +279,16 @@ the desktop. It never needs to exist on both.
   developer machine always has `../ghost-in-the-wreck` already on disk, so a
   local run skips it every time.
 - **The panel is proven on the travel laptop.** `npm ci`, `next dev`, the board,
-  both API routes and the step drawer, on portable node 20.20.2 under Windows
-  — 2026-09-11. Numbers in §3.
-- **Our node floor is below what the dependencies ask for.** `ai@7.0.84` and
-  four `@ai-sdk/*` packages declare `engines.node >= 22`; the README, the
-  `tools/cloud-setup.sh` preflight and CI all say 20. npm emits `EBADENGINE` and
-  continues, and `next build` passes, so this is a warning rather than a
-  breakage — but the LLM step runner is the part running below its own stated
-  floor, and that is the part hardest to notice failing. Unresolved.
+  both API routes and the step drawer, under Windows — 2026-09-11. Numbers
+  in §3.
+- **The node floor now matches the dependencies.** `ai@7.0.84` and four
+  `@ai-sdk/*` packages declare `engines.node >= 22`, while the README, the
+  preflight and CI all said 20. npm only warns `EBADENGINE` and carries on, so
+  nothing was visibly broken — but the LLM step runner was the piece running
+  below its own stated floor, which is also the piece hardest to notice failing.
+  All three now say 22. Verified on portable node 22.23.2: clean `npm ci` with
+  no `EBADENGINE`, `next build` passes, and the preflight correctly rejects
+  node 20 with exit 1.
 - **The FO4 gate's WSL-node combination is still untested** — see
   `FO4-TOOLCHAIN.md` §8. The committed config assumes Windows Node, and
   switching it needs a machine where the DLL exists.
