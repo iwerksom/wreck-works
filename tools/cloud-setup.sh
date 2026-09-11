@@ -13,15 +13,18 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 GAME_REPO=${GAME_REPO:-https://github.com/iwerksom/ghost-in-the-wreck.git}
-NODE_MIN=20
+NODE_MIN=22
 
 # --- preflight ---------------------------------------------------------------
 # A missing or too-old toolchain is the likeliest way this script fails in a
 # fresh sandbox, and bash's own "npm: command not found" names neither the
-# requirement nor where it is written down. Nothing else enforces it either:
-# web/package.json has no "engines" field, so npm will happily install under
-# node 18 and leave the failure to `next build` much later, by which point the
-# error no longer mentions node at all.
+# requirement nor where it is written down.
+#
+# Nothing else enforces the floor either. web/package.json has no "engines"
+# field of its own; its dependencies do declare one — ai and the @ai-sdk
+# packages want node >= 22 — but npm only warns EBADENGINE and carries on, so
+# an under-floor node installs cleanly and fails later somewhere that never
+# mentions node.
 #
 # Deliberately a plain string rather than an array: `${arr[@]}` on an empty
 # array is an unbound-variable error under `set -u` in bash before 4.4.

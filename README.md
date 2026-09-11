@@ -45,7 +45,8 @@ own history.
 ## Running it
 
 Needs bash: the worker spawns `bash -lc` and gates are shell commands. WSL
-Ubuntu or Linux, node 20+.
+Ubuntu or Linux, node 22+ — the `ai` and `@ai-sdk` packages declare
+`engines.node >= 22`.
 
     git clone <this repo> ~/projects/wreck-works
     git clone <game repo>  ~/projects/ghost-in-the-wreck
@@ -78,7 +79,7 @@ The worker serves every project in `projects.json` unless you pin one with
 `FACTORY_PROJECT=<id>`. Each job carries the project root it must run in, so one
 worker can drive several games.
 
-Toolchain the worker machine needs for the pilot's gates: node 20+, python3 with
+Toolchain the worker machine needs for the pilot's gates: node 22+, python3 with
 torch, `godot` on PATH, and Playwright (`cd ../ghost-in-the-wreck/test && npm install`).
 Gates degrade individually — a missing tool fails only its own steps.
 

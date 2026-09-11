@@ -16,16 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # 20 is the README's floor and what the preflight enforces. Pinning the
-      # major here means a bump to that floor has to be made in both places
-      # deliberately, rather than CI silently drifting onto whatever is newest.
+      # 22 is the README's floor and what the preflight enforces: the ai and
+      # @ai-sdk packages declare engines.node >= 22. Pinning the major here
+      # means a bump to that floor has to be made in both places deliberately,
+      # rather than CI silently drifting onto whatever is newest.
       #
       # Unrelated to the @v5 above: that is the runtime the action itself runs
       # on, which GitHub moved off Node 20. This node-version is the toolchain
       # the panel is built with, and stays at the README's floor.
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: shellcheck
         # Every shell script in tools/, not just the new one. up.sh predates any
