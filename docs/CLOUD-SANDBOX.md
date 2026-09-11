@@ -8,47 +8,91 @@ server comfortably. One rule governs the whole document:
 > worker needs the toolchain.** Every recommendation below is a consequence of
 > that split, which `README.md` § "Deploying the panel" already describes.
 
-## 1. Two activities that need different answers
+## 1. Three activities that need different answers
 
-The mistake is treating "work on Wreck Works" as one thing. It is two, and they
-live on different machines:
+The mistake is treating "work on Wreck Works" as one thing. It is three, and the
+dividing line is *not* panel-versus-desktop — it is whether a toolchain is
+involved:
 
 | | What it is | Where it runs | Desktop powered on? |
 |---|---|---|---|
 | **A. Changing the factory** | editing `web/`, API routes, gate logic, `tools/`, docs | a cloud sandbox | no |
-| **B. Running the factory** | driving the board, RUN GATE, RUN LLM STEP, training | the desktop | yes |
+| **B. Driving the panel** | the board, step drawer, artifact previews, SIGN OFF | the laptop | no |
+| **C. Running the gates** | RUN GATE, training, anything spawning `bash -lc` | the desktop | yes |
 
-Only B is genuinely constrained. A is ordinary Node development and moves
-anywhere. Most cafe sessions should be A.
+Only C is genuinely constrained. A is ordinary Node development. B was assumed
+to need the desktop when this document was first written, and measurement said
+otherwise — see §3.
+
+Most cafe sessions are A and B, and neither needs the desktop awake.
 
 ## 2. What each machine is for
 
 | Machine | Role | Needs |
 |---|---|---|
-| Laptop | reading code, reviewing diffs, a browser tab | git, a browser |
+| Laptop | reading code, reviewing diffs, **and running the panel** | git, portable node |
 | Cloud sandbox | activity A — edit, build, test, push a branch | Linux, node 20+ |
-| Desktop | activity B — the panel and the worker, together | the full toolchain |
+| Desktop | activity C — the worker, with the real toolchain | godot, python+torch, Playwright |
 
-## 3. The laptop is a thin client, deliberately
+## 3. The laptop runs the panel
 
-Audited 2026-09-10 on the travel laptop (Windows 10 Home, PowerShell 5.1):
+Audited 2026-09-10 on the travel laptop (Windows 10 Home), node added 2026-09-11:
 
 | Component | State | Note |
 |---|---|---|
 | git | 2.55.0.windows.5 | `C:\Program Files\Git` |
 | bash | present | Git Bash — ships with Git for Windows, no WSL distro needed |
+| curl | 8.21.0 | also from Git Bash; `tools/up.sh` needs it |
 | Git Credential Manager | active, system level | browser sign-in; no tokens to store |
-| node / npm | **absent** | deliberate — see below |
+| node / npm | **portable, not installed** | v20.20.2 / 10.8.2 in `~/node-portable` |
 | WSL | present, **zero distributions** | nothing to run Linux in |
-| Repos | shallow clones under `~/projects` | `wreck-works` + `ghost-in-the-wreck`, ~32 MB |
+| Repos | clones under `~/projects` | `wreck-works` + `ghost-in-the-wreck`, ~32 MB |
 
-**Node is deliberately not installed.** The only thing it buys a laptop is
-running `next dev` locally, which is the single most expensive thing this
-project asks of a machine — dev server, plus a worker polling twice a second,
-plus streaming API calls. And the worker needs bash anyway, so on Windows a real
-setup also wants a WSL distro, whose VM costs memory an old laptop does not
-have. Installing Node is what quietly pulls the work back onto the weakest
-machine.
+### Portable node, not an install
+
+The original rule here was "no node on the laptop", on the reasoning that having
+it invites running the expensive loop on the weakest machine. The reasoning
+stands; the prohibition was too blunt. A portable node keeps the pull without
+the push — it is there when you want the panel, and it is a directory you can
+delete.
+
+Download, verify and extract — the checksum step is not optional, this is a
+runtime you are about to execute:
+
+```bash
+curl -s https://nodejs.org/dist/latest-v20.x/SHASUMS256.txt | grep 'win-x64.zip$'
+curl -sL -o node20.zip https://nodejs.org/dist/latest-v20.x/node-v20.20.2-win-x64.zip
+sha256sum node20.zip          # must match the line above
+mkdir -p ~/node-portable
+tar -xf node20.zip -C ~/node-portable --strip-components=1
+```
+
+85 MB on disk. It never joins the system `PATH`; scope it per command instead:
+
+```bash
+PATH="$HOME/node-portable:$PATH" npm run dev
+```
+
+### What it actually costs, measured
+
+Measured 2026-09-11, first run on the travel laptop:
+
+| | |
+|---|---|
+| `npm ci` (33 packages) | 45s |
+| `next dev` ready | 18s |
+| first page compile | 37s |
+| after warm-up | responsive |
+
+That is well inside usable. The prediction that this laptop was too slow for
+`next dev` was wrong, and the board — 19 steps, artifact previews, the step
+drawer — works. Previews work specifically because the panel and the game repo
+share this filesystem, which is the same reason §5 argues against deploying the
+panel away from the projects.
+
+What does **not** work here is any gate needing python+torch, Godot or
+Playwright. Gates degrade individually, so the board stays usable and only those
+steps fail.
 
 **`core.autocrlf` must be `input` here, not the Windows default `true`.**
 `tools/up.sh` is a bash script and `worker/worker.js` spawns `bash -lc` for every
@@ -116,6 +160,13 @@ Prefer a private mesh (Tailscale or equivalent) that only your own devices can
 reach. If a public tunnel is ever unavoidable, put HTTP auth in front of it and
 treat the key as compromised afterwards.
 
+**Do not set up any tunnel while the panel is on `next@14.2.35`.** `npm audit`
+on 2026-09-11 reports a critical advisory for unauthenticated remote code
+execution on Windows-hosted Next.js servers, plus a high on `postcss`, both
+fixed only by `next@16.3.4` — a breaking major. Bound to `localhost` the
+exposure is limited; the entire point of a tunnel is to stop it being bound to
+localhost. Upgrade first, then tunnel.
+
 ## 6. Which gates run where
 
 | Gate toolchain | Sandbox | Desktop | Note |
@@ -181,6 +232,15 @@ which never runs the panel.
   The runner is also the only place the clone branch is ever exercised. A
   developer machine always has `../ghost-in-the-wreck` already on disk, so a
   local run skips it every time.
+- **The panel is proven on the travel laptop.** `npm ci`, `next dev`, the board,
+  both API routes and artifact previews, on portable node 20.20.2 under Windows
+  — 2026-09-11. Numbers in §3.
+- **Our node floor is below what the dependencies ask for.** `ai@7.0.84` and
+  four `@ai-sdk/*` packages declare `engines.node >= 22`; the README, the
+  `tools/cloud-setup.sh` preflight and CI all say 20. npm emits `EBADENGINE` and
+  continues, and `next build` passes, so this is a warning rather than a
+  breakage — but the LLM step runner is the part running below its own stated
+  floor, and that is the part hardest to notice failing. Unresolved.
 - **The FO4 gate's WSL-node combination is still untested** — see
   `FO4-TOOLCHAIN.md` §8. The committed config assumes Windows Node, and
   switching it needs a machine where the DLL exists.
