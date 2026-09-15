@@ -24,7 +24,7 @@ parser, map lint, parity test, calibration harness, playtest squad) would
 catch human mistakes identically. Once gates are solid, LLM-vs-manual
 becomes a per-step convenience choice instead of a trust decision.
 
-## The 18 steps
+## The 19 steps
 
 **World** — concept → canon (world + voice bibles) → format spec.
 Mostly review-gated; this is where taste lives.
@@ -36,7 +36,7 @@ the vertical slice). Corpus is the factory's biggest LLM win: parallel
 writer agents against a strict spec. Level design is the biggest manual
 win: painting maps in the Godot editor beats typing ASCII.
 
-**Model** — dataset build → train → export/quantize → parity → calibrate →
+**Model** — dataset build → train → export/quantize (parity-gated) → calibrate →
 sample review. Almost fully automated; the human/LLM choice only appears in
 watching the loss curve and writing calibration paraphrases. Iron rule:
 recalibrate after every retrain; thresholds do not survive new weights.
