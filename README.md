@@ -15,8 +15,11 @@ choice.
 The factory knows nothing about any particular game. It renders whatever a
 project's `pipeline.json` says. A second game is a second `pipeline.json`.
 
-- Pilot project: [Ghost in the Wreck](../ghost-in-the-wreck) — 18 steps, an
+- Pilot project: [Ghost in the Wreck](../ghost-in-the-wreck) — 19 steps, an
   embedded 2.9M-param transformer, shipped.
+- Why the steps are the steps: [`docs/WHY-THESE-STEPS.md`](docs/WHY-THESE-STEPS.md)
+  — the five rules the pilot's pipeline turns out to obey, and the condition
+  that decides whether a new project needs each step.
 - The design behind the pipeline: [`docs/FACTORY-PIPELINE.md`](docs/FACTORY-PIPELINE.md)
 - Writing a `pipeline.json`: [`docs/PIPELINE-SCHEMA.md`](docs/PIPELINE-SCHEMA.md)
 - What building the pilot actually taught us: [`docs/AGENT-LEARNINGS.md`](docs/AGENT-LEARNINGS.md)
@@ -83,13 +86,33 @@ Toolchain the worker machine needs for the pilot's gates: node 22+, python3 with
 torch, `godot` on PATH, and Playwright (`cd ../ghost-in-the-wreck/test && npm install`).
 Gates degrade individually — a missing tool fails only its own steps.
 
-## Adding a game
+## Starting a game
 
-1. `cp templates/ghost-in-the-wreck.pipeline.json <newgame>/pipeline.json`, then
-   rewrite the steps and gates for that game.
-2. Expose every gate as `make gate-<id>` in the game repo, running the identical
-   command.
-3. Add the project to `projects.json`.
+Press **+ NEW GAME** in the panel. Answer what the game is and whether it has a
+language model in it — embedded, a hosted API, or none — and the factory picks
+the steps: each one is included only when the condition that justifies it holds.
+The preview updates as you answer, and says which steps it is leaving out and
+why.
+
+Step *selection* is deterministic and needs no API key. **REFINE RECIPES WITH
+CLAUDE** is optional and only rewrites the prose inside the steps already
+chosen, so the recipes talk about your game instead of the pilot's.
+
+Creating writes a sibling directory:
+
+    ../<slug>/
+      pipeline.json   the steps, with the `why` behind each one
+      Makefile        `make gate-<id>` per automated gate, each failing until
+                      you implement it — an unwritten gate has not passed
+      README.md       the profile it was generated from, and the step list
+
+and registers it in `projects.json`. The rules behind the choices are in
+[`docs/WHY-THESE-STEPS.md`](docs/WHY-THESE-STEPS.md); the mapping itself is
+`web/lib/catalogue.js`.
+
+To bring in a game that already exists, add it to `projects.json` by hand and
+put a `pipeline.json` at its root —
+`templates/ghost-in-the-wreck.pipeline.json` is a complete one to copy.
 
 ## Deploying the panel
 

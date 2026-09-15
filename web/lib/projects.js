@@ -7,12 +7,12 @@
 import fs from "fs";
 import path from "path";
 
-const CONFIG =
+export const CONFIG_PATH =
   process.env.FACTORY_PROJECTS || path.resolve(process.cwd(), "..", "projects.json");
 
 function readConfig() {
   try {
-    const raw = JSON.parse(fs.readFileSync(CONFIG, "utf8"));
+    const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
     return Array.isArray(raw) ? { projects: raw } : raw;
   } catch {
     return { projects: [] };
@@ -20,7 +20,7 @@ function readConfig() {
 }
 
 function normalise(p) {
-  const base = path.dirname(CONFIG);
+  const base = path.dirname(CONFIG_PATH);
   return {
     id: p.id,
     name: p.name || p.id,
@@ -37,7 +37,7 @@ export function getProject(id) {
   const all = listProjects();
   if (!all.length) {
     throw new Error(
-      `No projects configured. Add one to ${CONFIG} — see projects.example.json.`
+      `No projects configured. Add one to ${CONFIG_PATH} — see projects.example.json.`
     );
   }
   const want = id || process.env.FACTORY_PROJECT || readConfig().active;
