@@ -252,12 +252,23 @@ Anthropic API key. A public URL — an ngrok or Cloudflare quick tunnel — expo
 remote code execution on the desktop to anyone who finds it. There is no
 authentication in front of the board.
 
-What the panel does refuse is other websites. `web/proxy.js` rejects any
-state-changing API request that the browser marks as coming from somewhere other
-than the panel's own page, so a site open in another tab cannot queue gates,
-spend the key or sign off a step through `localhost`. That is not
+What the panel does refuse is other websites. `web/proxy.js` checks every API
+request twice. First, it must be addressed to a hostname the panel expects:
+`localhost`, an IP address, or a name in `FACTORY_ALLOWED_HOSTS`. That stops DNS
+rebinding, where a site points its own domain at your machine so the browser
+treats its page as the panel's. Second, anything that changes state must be
+marked by the browser as coming from the panel's own page, so a site open in
+another tab cannot queue gates, spend the key or sign off a step. Neither is
 authentication: anything that reaches the port directly is unaffected, which is
 why the advice below still stands.
+
+**If you reach the panel by a name, list that name.** A Tailscale MagicDNS name,
+a LAN hostname such as the `<laptop>` in the split shape above, or a deployment
+URL all need adding to `FACTORY_ALLOWED_HOSTS` on the machine running the panel,
+or the panel answers 403 — to the browser and to a worker using that name alike.
+A tunnel IP such as `100.x.y.z` needs nothing. Behind a reverse proxy that
+rewrites `Host`, also set `FACTORY_TRUST_PROXY=1` so `X-Forwarded-Host` is used,
+and only then: a page can set that header on its own requests.
 
 Prefer a private mesh (Tailscale or equivalent) that only your own devices can
 reach. If a public tunnel is ever unavoidable, put HTTP auth in front of it and
@@ -316,6 +327,8 @@ code, so treat the code as authoritative if the two ever disagree.
 | `FACTORY_PROJECTS` | `../projects.json` | `web/lib/projects.js` | override the config path |
 | `POLL_MS` | `2000` | `worker/worker.js` | worker claim interval |
 | `PORT` | `3100` | `tools/up.sh` | panel port |
+| `FACTORY_ALLOWED_HOSTS` | — | `web/lib/request-guard.js` | comma-separated hostnames the panel answers to, on top of `localhost` and IP addresses, which are always allowed. Needed for any tunnel, LAN or deployment *name* (see §5) |
+| `FACTORY_TRUST_PROXY` | — | `web/lib/request-guard.js` | set to `1` only behind a reverse proxy that rewrites `Host` and sets `X-Forwarded-Host` |
 | `FO4HELLO_DLL`, `FO4HELLO_LOG`, `FO4_WINDOWS_USER` | see config | `tools/verify-dll.js` | Fallout 4 gate only |
 
 `web/.env.local`, `.env`, `.env.local` and `projects.json` are all gitignored.
