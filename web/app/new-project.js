@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Starting a new game.
 //
@@ -55,40 +55,62 @@ export default function NewProject({ onClose, onCreated, firstRun }) {
   const [busy, setBusy] = useState(null);   // "refine" | "create" | null
   const [err, setErr] = useState(null);
 
+  // Both requests below can finish out of order: toggles fire faster than the
+  // server answers, and refinement takes seconds while the brief stays
+  // editable. Each response is applied only if nothing changed since it was
+  // asked for — otherwise the preview or the recipes would describe a game
+  // that is no longer the one on screen.
+  const scopeSeq = useRef(0);
+  const briefSeq = useRef(0);
+
   const scope = useCallback(async p => {
+    const seq = ++scopeSeq.current;
     try {
       const r = await fetch("/api/scope", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ profile: p }),
       }).then(r => r.json());
-      setPreview(r);
+      if (seq === scopeSeq.current) setPreview(r);
     } catch {
-      setPreview(null);
+      if (seq === scopeSeq.current) setPreview(null);
     }
   }, []);
 
   useEffect(() => { scope(profile); }, [profile, scope]);
 
-  // Any change to the profile invalidates recipes written against the old one.
-  function set(patch) {
-    setProfile(p => Object.assign({}, p, patch));
+  // Any change to the brief (name, description or profile) invalidates recipes
+  // written against the old one, including a refinement still in flight.
+  function touch() {
+    briefSeq.current++;
     setRecipes(null);
     setErr(null);
   }
 
+  function set(patch) {
+    setProfile(p => Object.assign({}, p, patch));
+    touch();
+  }
+
   async function refine() {
     if (!name.trim()) { setErr("Give the game a name first — the recipes are written about it."); return; }
-    setBusy("refine"); setErr(null);
+    const seq = ++briefSeq.current;
+    setBusy("refine"); setErr(null); setRecipes(null);
     try {
       const r = await fetch("/api/scope/refine", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name, description, profile }),
       }).then(r => r.json());
-      if (r.error) setErr(r.error); else setRecipes(r.recipes);
+      if (seq !== briefSeq.current) {
+        setErr("You changed the game while Claude was writing, so those recipes were discarded. Refine again.");
+      } else if (r.error) {
+        setErr(r.error);
+      } else {
+        setRecipes(r.recipes);
+      }
     } catch (e) {
-      setErr("Refine failed: " + e.message);
+      if (seq === briefSeq.current) setErr("Refine failed: " + e.message);
     }
     setBusy(null);
   }
@@ -129,12 +151,12 @@ export default function NewProject({ onClose, onCreated, firstRun }) {
           <div className="formcol">
             <label className="fld">
               <span>NAME</span>
-              <input value={name} onChange={e => { setName(e.target.value); setErr(null); }}
-                     placeholder="Ghost in the Wreck" autoFocus />
+              <input value={name} onChange={e => { setName(e.target.value); touch(); }}
+                     placeholder="Ghost in the Wreck" maxLength={80} autoFocus />
             </label>
             <label className="fld">
               <span>WHAT IS IT?</span>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
+              <textarea value={description} onChange={e => { setDescription(e.target.value); touch(); }} rows={3} maxLength={2000}
                         placeholder="One or two sentences. Used to write the step recipes, if you refine them." />
             </label>
 

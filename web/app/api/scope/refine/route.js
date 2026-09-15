@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { selectSteps } from "../../../../lib/catalogue";
+import { cleanBrief } from "../../../../lib/scaffold";
+import { readJson } from "../../../../lib/http";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -42,16 +44,19 @@ export async function POST(req) {
       { status: 400 }
     );
   }
-  let body;
+  // Bounded and validated before any provider client exists, so an oversized
+  // or malformed request costs nothing.
+  let body, brief;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "bad request body" }, { status: 400 });
+    body = await readJson(req);
+    brief = cleanBrief(body);
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: e.status || 400 });
   }
-  const { name, description = "", profile } = body;
+  const { profile } = body;
   const { steps } = selectSteps(profile);
 
-  const brief = steps.map(s =>
+  const stepList = steps.map(s =>
     `--- ${s.id} (${s.phase}: ${s.name})\nwhy: ${s.why}\ncurrent criteria: ${s.gate.criteria}\ngate kind: ${s.gate.kind}`
   ).join("\n");
 
@@ -61,10 +66,10 @@ export async function POST(req) {
       model: anthropic(process.env.FACTORY_MODEL || "claude-sonnet-4-5"),
       system: SYSTEM,
       prompt:
-        `GAME: ${name}\n` +
-        `DESCRIPTION: ${description || "(none given)"}\n` +
+        `GAME: ${brief.name}\n` +
+        `DESCRIPTION: ${brief.description || "(none given)"}\n` +
         `MODEL ARCHITECTURE: ${profile?.architecture || "embedded"}\n\n` +
-        `STEPS TO REWRITE:\n${brief}`,
+        `STEPS TO REWRITE:\n${stepList}`,
     });
     const patch = parseJson(text);
     // Only keep keys that name a real selected step, so a hallucinated id can
