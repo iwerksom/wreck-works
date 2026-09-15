@@ -13,6 +13,7 @@ export default function Factory() {
   const [link, setLink] = useState("ok");   // panel reachable? "ok" | "down"
   const [booted, setBooted] = useState(false); // has /api/projects answered once?
   const [showNew, setShowNew] = useState(false);
+  const [configErr, setConfigErr] = useState(null); // projects.json exists but is unusable
   const streamRef = useRef(null);
 
   const q = proj ? `?project=${encodeURIComponent(proj)}` : "";
@@ -20,6 +21,7 @@ export default function Factory() {
   const loadProjects = useCallback(async () => {
     try {
       const r = await fetch("/api/projects").then(r => r.json());
+      setConfigErr(r.configError || null);
       setProjects(r.projects || []);
       setProj(cur => cur || r.active);
       if (r.error) setErr(r.error);
@@ -72,12 +74,23 @@ export default function Factory() {
 
   // The wizard is an overlay, so it has to survive the early returns below —
   // the commonest time to want it is when there is no pipeline to show.
-  const firstRun = booted && projects.length === 0;
+  // A broken projects.json is not a first run: offering to create a game there
+  // would invite the one action that could overwrite the file.
+  const firstRun = booted && !configErr && projects.length === 0;
   const overlay = (showNew || firstRun) ? (
     <NewProject firstRun={firstRun} onClose={() => setShowNew(false)} onCreated={projectCreated} />
   ) : null;
 
   if (!booted) return <div className="empty">starting ...</div>;
+  if (configErr) {
+    return (
+      <div className="empty">
+        {configErr}
+        <br />
+        Fix the file by hand, then reload. The panel will not write to it while it is broken.
+      </div>
+    );
+  }
   if (firstRun) return overlay;
   if (err) return <>{overlay}<div className="empty">{err}</div></>;
   if (!data) return <>{overlay}<div className="empty">reading pipeline ...</div></>;

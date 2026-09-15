@@ -19,6 +19,28 @@ function readConfig() {
   }
 }
 
+// Why projects.json cannot be used, or null if it can. A missing file is not a
+// problem, it is a first run. Anything else (unreadable, not JSON, no projects
+// array) is, and must reach the operator rather than look like an empty
+// factory: readConfig above treats all of these as "no projects", and the
+// new-game flow would then overwrite a file someone could still recover.
+export function configProblem() {
+  let text;
+  try {
+    text = fs.readFileSync(CONFIG_PATH, "utf8");
+  } catch (e) {
+    return e.code === "ENOENT" ? null : `Cannot read ${CONFIG_PATH}: ${e.message}.`;
+  }
+  let raw;
+  try {
+    raw = JSON.parse(text);
+  } catch (e) {
+    return `${CONFIG_PATH} is not valid JSON: ${e.message}.`;
+  }
+  const projects = Array.isArray(raw) ? raw : raw && raw.projects;
+  return Array.isArray(projects) ? null : `${CONFIG_PATH} has no "projects" array.`;
+}
+
 function normalise(p) {
   const base = path.dirname(CONFIG_PATH);
   return {
