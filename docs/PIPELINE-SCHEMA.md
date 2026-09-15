@@ -11,12 +11,39 @@ harness.
   "name": "...",              // shown in the panel
   "version": "1.0",
   "description": "...",
+  "profile": { /* see below */ },  // optional; what the steps were chosen from
   "phases": ["World", "Content", "Model", "Game", "Release"],
   "steps": [ /* see below */ ]
 }
 ```
 
-`phases` is the column order on the board. Every step names one of them.
+`phases` is the column order on the board. Every step names one of them. A
+project only lists the phases it actually uses: a game with no language model
+has no Model column, and the board simply does not draw one.
+
+### `profile` — the answers a pipeline was generated from
+
+The panel's new-game flow writes this block. It is a record, not an instruction:
+nothing re-reads it to decide anything, and editing it changes no steps. It is
+there so that six months later you can see *why* this pipeline has the steps it
+has.
+
+```jsonc
+"profile": {
+  "architecture": "embedded",  // "none" | "embedded" | "api"
+  "levels": true,              // spatial levels -> maps
+  "narrative": true,           // fixed story beats -> story_data
+  "economy": true,             // resources -> tuning, balance
+  "sound": true,               // -> audio, whose gate is always human
+  "voices": true,              // more than one voice -> canon
+  "modelGatesPlay": true,      // model decides outcomes -> calibrate
+  "modelWritesText": true      // model writes player-facing text -> sample_review
+}
+```
+
+The mapping from these answers to steps lives in `web/lib/catalogue.js` and is
+deterministic — no model is involved in choosing steps, only in writing the
+recipe prose inside them.
 
 ## A step
 
@@ -25,12 +52,13 @@ harness.
   "id": "calibrate",              // unique, stable; used in URLs and state
   "phase": "Model",
   "name": "Calibrate thresholds",
+  "why": "...",                   // the failure this step exists to prevent
   "inputs":  ["game/weights.js"], // project-relative; attached to LLM prompts
   "outputs": ["game/calibration.js"],
   "llm_recipe": "...",            // the prompt, when an LLM does this step
   "manual_recipe": "...",         // instructions, when a human does it
   "gate": {
-    "kind": "cmd",                // "cmd" | "review"
+    "kind": "automated",          // "automated" | "review"
     "cmd": "node test/calibrate.js",
     "criteria": "Top-1 accuracy on fresh paraphrases >= 80%."
   },
@@ -39,6 +67,12 @@ harness.
 ```
 
 ### Rules the harness relies on
+
+- **`why` is the step's justification, and the panel shows it** as *why this step
+  exists*. Write the failure it prevents, not what it does — the name already
+  says what it does. A step whose `why` you cannot write is a step that has not
+  earned its place; see [`WHY-THESE-STEPS.md`](WHY-THESE-STEPS.md) for the five
+  rules the pilot's own steps turn out to obey.
 
 - **`gate.cmd` runs with `cwd` = the project root**, under `bash -lc`, on the
   worker machine. Write it exactly as you would type it there. A meaningful
