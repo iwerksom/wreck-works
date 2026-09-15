@@ -127,6 +127,12 @@ Godot and Playwright. Point it at the deployment:
 
     HARNESS=https://your-app.vercel.app npm run worker
 
+**List the deployment's hostname.** The panel answers only `localhost`, IP
+addresses and the names in `FACTORY_ALLOWED_HOSTS`, so set
+`FACTORY_ALLOWED_HOSTS=your-app.vercel.app` in the deployment's environment, or
+every API request, the worker's included, gets a 403. This is DNS-rebinding
+protection, not authentication; see `docs/CLOUD-SANDBOX.md`.
+
 A deployed panel also cannot read project files for artifact previews or LLM
 step inputs; that path assumes the panel and the projects share a filesystem.
 Run the panel locally while that matters. LLM steps themselves are fine
