@@ -252,6 +252,13 @@ Anthropic API key. A public URL — an ngrok or Cloudflare quick tunnel — expo
 remote code execution on the desktop to anyone who finds it. There is no
 authentication in front of the board.
 
+What the panel does refuse is other websites. `web/proxy.js` rejects any
+state-changing API request that the browser marks as coming from somewhere other
+than the panel's own page, so a site open in another tab cannot queue gates,
+spend the key or sign off a step through `localhost`. That is not
+authentication: anything that reaches the port directly is unaffected, which is
+why the advice below still stands.
+
 Prefer a private mesh (Tailscale or equivalent) that only your own devices can
 reach. If a public tunnel is ever unavoidable, put HTTP auth in front of it and
 treat the key as compromised afterwards.
